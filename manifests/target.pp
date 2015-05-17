@@ -48,7 +48,8 @@ class nagios::target(
       tag     => 'nagios-key',
     }
 
-    $rsync_dest = "${target_host}:${target_path}/${conf_name}.cfg"
+    $rsync_dest_service = "${target_host}:${target_path}/${conf_name}_service.cfg"
+    $rsync_dest_host = "${target_host}:${target_path}/${conf_name}_host.cfg"
 
     $hosts = hiera_hash('nagios_hosts', {})
     $services = hiera_hash('nagios_services', {})
@@ -56,15 +57,26 @@ class nagios::target(
     create_resources('nagios_host', $hosts)
     create_resources('nagios_service', $services)
 
-    resources { [nagios_service, nagios_host]:
+    resources { nagios_service:
       purge   => true,
-      notify  => Rsync::Put[$rsync_dest]
+      notify  => Rsync::Put[$rsync_dest_service]
     }
 
-    rsync::put { "$rsync_dest":
+    resources { nagios_host:
+      purge   => true,
+      notify  => Rsync::Put[$rsync_dest_host]
+    }
+
+    rsync::put { "$rsync_dest_service":
       user    => $remote_user,
       keyfile => $keyfile,
       source  => "/etc/nagios/nagios_service.cfg",
+    }
+
+    rsync::put { "$rsync_dest_host":
+      user    => $remote_user,
+      keyfile => $keyfile,
+      source  => "/etc/nagios/nagios_host.cfg",
     }
   }
 }
