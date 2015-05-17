@@ -40,8 +40,6 @@ class nagios::target(
       creates => $keypath,
       require => File['/etc/nagios/.ssh']
     }
-
-    notify { "[nagios] *** NOTICE ***: Puppet needs to be run on the Nagios monitor to collect this host's ssh_authorized_key resource.": }
   } else {
     @@ssh_authorized_key { "${local_user}@${::clientcert}":
       key     => $nagios_key,
