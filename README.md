@@ -57,11 +57,13 @@ Storeconfigs must be enabled on the Puppetmaster.
 
 ### Beginning with Nagios
 
-This module requires a little bit of patience to get moving. The initial Puppet run will not
-magically make everything work, however, if you simply include the `nagios::target` class
-and wait it will eventually work.
+This module requires a little bit of patience to get a target syncing its configs to a monitor.
+The initial Puppet run will not magically make everything work, however, if you simply include
+the `nagios::target` class and wait it will eventually work.
 
-The monitor should be configured first. To do this, simply include the `nagios::monitor` class.
+The monitor should be configured first. To do this, simply include the `nagios::monitor` class
+and optionally also include the `nagios::target` class with `is_monitor` set to true if you want
+the monitor server to monitor itself..
 
 ```puppet
 include '::nagios::monitor'
@@ -83,13 +85,13 @@ class { '::nagios::target':
 Puppet needs to run a couple
 of times before configurations will actually be shared. Here is how it all goes down:
 
-- *Target*: The first Puppet run will configure a user named 'nagsync' and generate an SSH key for it.
+1. *Target*: The first Puppet run will configure a user named 'nagsync' and generate an SSH key for it.
     This key will be used for rsyncing configurations over to the monitor later on.
-- *Target*: The second Puppet run will export the key generated in the previous step as an
+2. *Target*: The second Puppet run will export the key generated in the previous step as an
     export ssh_authorized_key resource.
-- *Monitor*: Once the key has been exported, it needs to be collected by the monitor. Run
+3. *Monitor*: Once the key has been exported, it needs to be collected by the monitor. Run
     Puppet again on the monitor to collect the key.
-- *Target*: Finally, the configurations are ready to be transferred to the master. Run
+4. *Target*: Finally, the configurations are ready to be transferred to the master. Run
     Puppet again and watch the configurations transfer over to the master.
 
 You do not need to manually run these steps if you do not want to. Puppet will figure all of
