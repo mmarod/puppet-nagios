@@ -103,8 +103,27 @@ this out on its own. However, if you are impatient, this is the order you should
 
 * The Hiera key `nagios_services` creates target specific services
 * The Hiera key `nagios_hosts` creates target specific hosts
-* THe Hiera key `nrpe_commands` creates NRPE commands
-* THe Hiera key `nrpe_plugins` creates NRPE plugins
+* The Hiera key `nrpe_commands` creates NRPE commands
+* The Hiera key `nrpe_plugins` creates NRPE plugins
+
+```yaml
+nagios_hosts:
+  testhost:
+    ensure: present
+    alias: '%{::hostname}'
+    address: '%{::ipaddress}'
+    use: generic-host
+    hostgroups: testhostgroup
+    icon_image: base/icon.png
+    notification_period: 24x7
+nagios_services:
+  testservice:
+    check_command: /usr/bin/testcommand
+    use: generic-service
+    host_name: '%{::clientcert}'
+    service_description: 'test command'
+    notification_period: 24x7
+```
 
 If you plan on  monitoring your monitor, you will need to include the nagios::target
 class on the monitor. Set `nagios::target::is_monitor` to true to manage those
@@ -117,6 +136,22 @@ configurations.
 * `nagios::monitor::commands` Creates commands
 * `nagios::monitor::plugins` Creates plugins
 * `nagios::monitor::eventhandlers` Creates eventhandlers
+
+```yaml
+nagios::monitor::plugins:
+  myplugin:
+    content: moo
+nagios::monitor::eventhandlers:
+  myeventhandler:
+    content: moo
+nagios::monitor::hostgroups:
+  myhostgroup: {}
+nagios::monitor::servicegroups:
+  myservicegroup: {}
+nagios::monitor::commands:
+  mycommand:
+    command_line: /usr/bin/whoami
+```
 
 ## Reference
 
