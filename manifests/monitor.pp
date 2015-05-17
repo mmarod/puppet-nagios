@@ -1,3 +1,25 @@
+# This class configures a Nagios monitor.
+#
+# @example Standard configuration
+#   include '::nagios::monitor'
+#   class { '::nagios::target':
+#     is_monitor  => true
+#   }
+#
+# @param packages [Array] A list of packages to install.
+# @param nagios_user [String] The nagios user.
+# @param nagios_group [String] The nagios group.
+# @param plugin_mode [String] The mode for the Nagios plugins.
+# @param eventhander_mode [String] The mode for the Nagios eventhandlers.
+# @param plugins [Hash] A hash of nagios::plugin types.
+# @param plugin_path [String] The path to the Nagios plugins.
+# @param eventhandlers [Hash] A hash of nagios::eventhandler types.
+# @param eventhandler_path [String] The path to the Nagios eventhandlers.
+# @param hostgroups [Hash] A hash of nagios_hostgroup types.
+# @param servicegroups [Hash] A hash of nagios_servicegroup types.
+# @param commands [Hash] A hash of nagios_comand types.
+# @param manage_firewall [Boolean] Whether or not to open port 873 for rsync.
+#
 class nagios::monitor(
   $packages           = [ 'nagios3', 'nagios-plugins' ],
   $nagios_user        = 'nagios',
@@ -11,7 +33,22 @@ class nagios::monitor(
   $hostgroups         = {},
   $servicegroups      = {},
   $commands           = {},
+  $manage_firewall    = false,
 ) {
+  validate_array($packages)
+  validate_string($nagios_user)
+  validate_string($nagios_group)
+  validate_string($plugin_mode)
+  validate_string($eventhandler_mode)
+  validate_hash($plugins)
+  validate_absolute_path($plugin_path)
+  validate_hash($eventhandlers)
+  validate_absolute_path($eventhandler_path)
+  validate_hash($hostgroups)
+  validate_hash($servicegroups)
+  validate_hash($commands)
+  validate_bool($manage_firewall)
+
   Package<||> -> Ssh_authorized_key<||>
 
   include rsync::server
@@ -45,5 +82,14 @@ class nagios::monitor(
                 'nagios_servicegroup',
                 'nagios_command' ]:
     purge => true,
+  }
+
+  if $manage_firewall {
+    firewall { '200 Allow rsync access for Nagios':
+      chain   => 'INPUT',
+      proto   => 'tcp',
+      dport   => '873',
+      action  => 'accept'
+    }
   }
 }

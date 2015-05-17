@@ -32,38 +32,79 @@ configuration files occurs on each individual server in smaller jobs.
 
 ### What Nagios affects
 
-This configuration requires that rsync works which means that port 187 must be open on the
+This configuration requires that rsync works which means that port 873 must be open on the
 monitor server. SSH keys are automatically created and distributed using store configs.
+
+It will create a user named 'nagsync' and also generate an SSH key for this user.
 
 ### Setup requirements
 
+#### Puppet Requirements
+
 * Puppet-3.0.0 or later
-* Storeconfigs enabled
+* PuppetDB-2.0.0 or later
+* Facter-2.0.0 or later
+* Hiera-2.0.0 or later
+
+Storeconfigs must be enabled on the Puppetmaster.
+
+#### Dependencies
+
+* puppetlabs/stdlib >=4.2.0
+* puppetlabs/rsync >=0.4.0
+* puppetlabs/firewall >= 1.0.0
+* pdxcat/nrpe >=1.0.0
 
 ### Beginning with Nagios
 
-#### Target
+This module requires a little bit of patience to get moving. The initial Puppet run will not
+magically make everything work, however, if you simply include the `nagios::target` class
+and wait it will eventually work.
 
-````puppet
-include '::nagios::target'
+The monitor should be configured first. To do this, simply include the `nagios::monitor` class.
+
+```puppet
+include '::nagios::monitor'
+class { '::nagios::target':
+  is_monitor  => true
+}
 ```
 
-````yaml
-nagios::target::target_server: 192.168.10.100
+Run Puppet on the monitor server to get the initial configuration realized.
+
+Once the monitor has been configured, targets can be configured.
+
+```puppet
+class { '::nagios::target':
+    target_host => '192.168.10.20'
+}
 ```
 
-#### Monitor
+Puppet needs to run a couple
+of times before configurations will actually be shared. Here is how it all goes down:
 
-```
-include '::nagios::server'
-```
+- *Target*: The first Puppet run will configure a user named 'nagsync' and generate an SSH key for it.
+    This key will be used for rsyncing configurations over to the monitor later on.
+- *Target*: The second Puppet run will export the key generated in the previous step as an
+    export ssh_authorized_key resource.
+- *Monitor*: Once the key has been exported, it needs to be collected by the monitor. Run
+    Puppet again on the monitor to collect the key.
+- *Target*: Finally, the configurations are ready to be transferred to the master. Run
+    Puppet again and watch the configurations transfer over to the master.
+
+You do not need to manually run these steps if you do not want to. Puppet will figure all of
+this out on its own. However, if you are impatient, this is the order you should go in.
 
 ## Usage
 
 ### Target
 
-* `nagios_services` Creates target specific services
-* `nagios_hosts` Creates target specific hosts
+* The Hiera key `nagios_services` creates target specific services
+* The Hiera key `nagios_hosts` creates target specific hosts
+
+If you are monitoring your monitor, you will need to include the nagios::target
+class on the monitor. You should set `nagios::target::is_monitor` to true for
+the monitor server.
 
 ### Monitor
 
@@ -74,6 +115,16 @@ include '::nagios::server'
 * `nagios::monitor::eventhandlers` Creates eventhandlers
 
 ## Reference
+
+### Facts
+
+#### nagios_key_exists
+
+Whether or not the Nagios key has been generated yet.
+
+#### nagios_key
+
+The SSH key for the nagsync user.
 
 ### Classes
 
@@ -99,9 +150,9 @@ The path to the conf.d server on the monitor.
 
 Default: /etc/nagios/conf.d
 
-#### `nagios::target::conf_name`
+#### `nagios::target::prefix`
 
-The name of the configuration files that will show up on the monitor.
+The name of the prefix for the configuration files that will show up on the monitor.
 
 Default: $::clientcert
 
@@ -123,74 +174,86 @@ Deteremines whether or not to install and manage nrpe.
 
 Default: true
 
+#### `nagios::target::is_monitor`
+
+Determines whether or not this target is also the monitor.
+
+Default: false
+
 ### `nagios::monitor::packages`
 
 The Nagios packages
 
 Default: [ 'nagios3', 'nagios-plugins' ]
 
-### `nagios::monitor::nagios_user`
+#### `nagios::monitor::nagios_user`
 
 The Nagios user
 
 Default: nagios
 
-### `nagios::monitor::nagios_group`
+#### `nagios::monitor::nagios_group`
 
 The Nagios group
 
 Default: nagios
 
-### `nagios::monitor::plugin_mode`
+#### `nagios::monitor::plugin_mode`
 
 The mode to give plugins
 
 Default: 0755
 
-### `nagios::monitor::eventhandler_mode`
+#### `nagios::monitor::eventhandler_mode`
 
 The mode to give eventhandlers
 
 Default: 0755
 
-### `nagios::monitor::plugins`
+#### `nagios::monitor::plugins`
 
 A hash of nagios::plugin resources.
 
 Default: {}
 
-### `nagios::monitor::plugin_path`
+#### `nagios::monitor::plugin_path`
 
 The path to the Nagios plugins
 
 Default: /etc/nagios-plugins/config
 
-### `nagios::monitor::eventhandlers`
+#### `nagios::monitor::eventhandlers`
 
 A hash of nagios::eventhandler resources.
 
 Default: {}
 
-### `nagios::monitor::plugin_path`
+#### `nagios::monitor::plugin_path`
 
 The path to the Nagios plugins
 
 Default: /usr/share/nagios3/plugins/eventhandlers
 
-### `nagios::monitor::hostgroups`
+#### `nagios::monitor::hostgroups`
 
 A hash of nagios_hostgroups.
 
 Default: {}
 
-### `nagios::monitor::servicegroups`
+#### `nagios::monitor::servicegroups`
 
 A hash of nagios_servicegroups.
 
 Default: {}
 
-### `nagios::monitor::commands`
+#### `nagios::monitor::commands`
 
 A hash of nagios_commands.
 
 Default: {}
+
+#### `nagios::monitor::manage_firewall`
+
+Whether or not to open port 873.
+
+Default: false

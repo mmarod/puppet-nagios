@@ -1,3 +1,32 @@
+# This class configures a target as a Nagios client. The target
+# will be automatically added to the monitor after 3 Puppet runs.
+# The first run generates an SSH key the will be used to rsync configs
+# over to the monitor. The second run exports the generated SSH key
+# as an 'ssh_authorized_key' so that the monitor can add it to its
+# authorized_keys file. After this second run, Puppet needs to run on
+# the monitor server to collect the SSH key. Finally, run Puppet a
+# third time on the target machine and the configurations will be
+# transferred to the monitor under /etc/nagios3/conf.d/*.
+#
+# @example A regular node that is not the Nagios monitor
+#   class { '::nagios::target':
+#     target_host    => 'nagios.example.com'
+#   }
+#
+# @example A node that is also the Nagios monitor
+#   include '::nagios::monitor'
+#   class { '::nagios::target':
+#     is_monitor  => true
+#   }
+#
+# @params target_host [String] The IP or hostname of the Nagios monitor.
+# @params target_path [String] The remote path to the Nagios conf.d directory.
+# @params prefix [String] The prefix for the configuration files on the monitor.
+# @params local_user [String] The local user to use for rsync'ing configs.
+# @params remote_user [String] The remote user on the Nagios monitor to use for rsync'ing configs.
+# @params use_nrpe [Boolean] Whether or not to configure nrpe.
+# @params is_monitor [Boolean] Whether or not this target is the Nagios monitor.
+#
 class nagios::target(
   $target_host          = undef,
   $target_path          = '/etc/nagios3/conf.d',
@@ -7,6 +36,13 @@ class nagios::target(
   $use_nrpe             = true,
   $is_monitor           = false,
 ) {
+  validate_absolute_path($target_path)
+  validate_string($prefix)
+  validate_string($local_user)
+  validate_string($remote_user)
+  validate_bool($user_nrpe)
+  validate_bool($is_monitor)
+
   Nagios_host<||> -> Rsync::Put<||>
   Nagios_service<||> -> Rsync::Put<||>
 
