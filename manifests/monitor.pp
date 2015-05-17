@@ -38,7 +38,7 @@ class nagios::monitor(
   create_resources('nagios_servicegroup', $servicegroups)
   create_resources('nagios_command', $commands)
 
-  resources( [  'nagios_hostgroup',
+  resources { [  'nagios_hostgroup',
                 'nagios_servicegroup',
                 'nagios_command' ]:
     purge => true,

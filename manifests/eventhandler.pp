@@ -17,11 +17,11 @@ define nagios::eventhandler (
   include '::nagios'
 
   file { "${eventhandler_path}/${title}":
-    ensure          => $ensure,
-    content         => $content,
-    source          => $source,
-    owner           => $owner,
-    group           => $group,
-    mode            => $mode,
+    ensure  => $ensure,
+    content => $content,
+    source  => $source,
+    owner   => $owner,
+    group   => $group,
+    mode    => $mode,
   }
 }

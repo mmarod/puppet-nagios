@@ -17,11 +17,11 @@ class nagios::target(
     create_resources('nrpe::plugin', $nrpe_plugins)
   }
 
-  $keypath = "/etc/nagios/.ssh/id_rsa"
+  $keypath = '/etc/nagios/.ssh/id_rsa'
 
   user { $local_user:
-    ensure      => present,
-    managehome  => true
+    ensure     => present,
+    managehome => true
   }
 
   file { [ '/etc/nagios', '/etc/nagios/.ssh' ]:
@@ -29,12 +29,12 @@ class nagios::target(
     owner  => $local_user
   }
 
-  if $nagios_key_exists == "no" {
-    $type     = 'rsa'
-    $bits     = '2048'
-    $comment  = 'Nagios ssh key'
+  if $::nagios_key_exists == 'no' {
+    $type    = 'rsa'
+    $bits    = '2048'
+    $comment = 'Nagios ssh key'
 
-    exec { "ssh-keygen-nagios":
+    exec { 'ssh-keygen-nagios':
       command => "/usr/bin/ssh-keygen -t ${type} -b ${bits} -f '${keypath}' -N '' -C '${comment}'",
       user    => $local_user,
       creates => $keypath,
@@ -42,10 +42,10 @@ class nagios::target(
     }
   } else {
     @@ssh_authorized_key { "${local_user}@${::clientcert}":
-      key     => $nagios_key,
-      user    => $remote_user,
-      type    => 'ssh-rsa',
-      tag     => 'nagios-key',
+      key  => $::nagios_key,
+      user => $remote_user,
+      type => 'ssh-rsa',
+      tag  => 'nagios-key',
     }
 
     $rsync_dest_service = "${target_host}:${target_path}/${conf_name}_service.cfg"
@@ -57,26 +57,26 @@ class nagios::target(
     create_resources('nagios_host', $hosts)
     create_resources('nagios_service', $services)
 
-    resources { nagios_service:
-      purge   => true,
-      notify  => Rsync::Put[$rsync_dest_service]
+    resources { 'nagios_service':
+      purge  => true,
+      notify => Rsync::Put[$rsync_dest_service]
     }
 
-    resources { nagios_host:
-      purge   => true,
-      notify  => Rsync::Put[$rsync_dest_host]
+    resources { 'nagios_host':
+      purge  => true,
+      notify => Rsync::Put[$rsync_dest_host]
     }
 
-    rsync::put { "$rsync_dest_service":
+    rsync::put { $rsync_dest_service:
       user    => $remote_user,
-      keyfile => $keyfile,
-      source  => "/etc/nagios/nagios_service.cfg",
+      keyfile => $::keyfile,
+      source  => '/etc/nagios/nagios_service.cfg',
     }
 
-    rsync::put { "$rsync_dest_host":
+    rsync::put { $rsync_dest_host:
       user    => $remote_user,
-      keyfile => $keyfile,
-      source  => "/etc/nagios/nagios_host.cfg",
+      keyfile => $::keyfile,
+      source  => '/etc/nagios/nagios_host.cfg',
     }
   }
 }
