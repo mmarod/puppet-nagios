@@ -103,10 +103,12 @@ this out on its own. However, if you are impatient, this is the order you should
 
 * The Hiera key `nagios_services` creates target specific services
 * The Hiera key `nagios_hosts` creates target specific hosts
+* THe Hiera key `nrpe_commands` creates NRPE commands
+* THe Hiera key `nrpe_plugins` creates NRPE plugins
 
-If you are monitoring your monitor, you will need to include the nagios::target
-class on the monitor. You should set `nagios::target::is_monitor` to true for
-the monitor server.
+If you plan on  monitoring your monitor, you will need to include the nagios::target
+class on the monitor. Set `nagios::target::is_monitor` to true to manage those
+configurations.
 
 ### Monitor
 
