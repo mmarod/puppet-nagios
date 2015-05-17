@@ -12,24 +12,27 @@ class nagios::monitor(
   $servicegroups      = {},
   $commands           = {},
 ) {
+  Package<||> -> Ssh_authorized_key<||>
+
   include rsync::server
 
   ensure_packages($packages)
+  ensure_resource('user', $nagios_user, { 'ensure'          => 'present',
+                                          'managehome'      => true,
+                                          'home'            => '/home/nagios',
+                                          'purge_ssh_keys'  => true })
 
-  user { $nagios_user: ensure => present }
-
-  file { [ '/etc/nagios', '/etc/nagios/conf.d' ]:
+  file { [ '/etc/nagios3', '/etc/nagios3/conf.d' ]:
     ensure  => directory,
     owner   => $nagios_user,
-    group   => $nagios_group,
     require => Package[$packages]
-  } ->
+  }
 
   Ssh_authorized_key <<| tag == 'nagios-key' |>>
 
   rsync::server::module { 'nagios':
-    path    => '/etc/nagios',
-    require => File['/etc/nagios']
+    path    => '/etc/nagios3',
+    require => Package[$packages]
   }
 
   create_resources('nagios::plugin', $plugins)
@@ -38,7 +41,7 @@ class nagios::monitor(
   create_resources('nagios_servicegroup', $servicegroups)
   create_resources('nagios_command', $commands)
 
-  resources { [  'nagios_hostgroup',
+  resources { [ 'nagios_hostgroup',
                 'nagios_servicegroup',
                 'nagios_command' ]:
     purge => true,
