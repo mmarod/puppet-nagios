@@ -40,7 +40,7 @@ class nagios::target(
   validate_string($prefix)
   validate_string($local_user)
   validate_string($remote_user)
-  validate_bool($user_nrpe)
+  validate_bool($use_nrpe)
   validate_bool($is_monitor)
 
   Nagios_host<||> -> Rsync::Put<||>
@@ -67,13 +67,13 @@ class nagios::target(
 
   if $is_monitor {
     file { "/etc/nagios3/conf.d/${prefix}_host.cfg":
-      ensure  => link,
-      target  => "/etc/nagios/nagios_host.cfg",
+      ensure => link,
+      target => '/etc/nagios/nagios_host.cfg',
     }
 
     file { "/etc/nagios3/conf.d/${prefix}_service.cfg":
-      ensure  => link,
-      target  => "/etc/nagios/nagios_service.cfg",
+      ensure => link,
+      target => '/etc/nagios/nagios_service.cfg',
     }
   } else {
     validate_string($target_host)
@@ -113,7 +113,7 @@ class nagios::target(
       source  => '/etc/nagios/nagios_service.cfg',
     }
 
-    if $::nagios_key_exists == "yes" {
+    if $::nagios_key_exists == 'yes' {
       @@ssh_authorized_key { "${local_user}@${::clientcert}":
         key  => $::nagios_key,
         user => $remote_user,

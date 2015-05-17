@@ -86,10 +86,10 @@ class nagios::monitor(
 
   if $manage_firewall {
     firewall { '200 Allow rsync access for Nagios':
-      chain   => 'INPUT',
-      proto   => 'tcp',
-      dport   => '873',
-      action  => 'accept'
+      chain  => 'INPUT',
+      proto  => 'tcp',
+      dport  => '873',
+      action => 'accept'
     }
   }
 }
