@@ -14,8 +14,6 @@ define nagios::plugin (
     $mode         = '0755',
     $plugin_path  = '/etc/nagios-plugins/config',
 ) {
-  include '::nagios'
-
   file { "${plugin_path}/${title}":
     ensure  => $ensure,
     content => $content,

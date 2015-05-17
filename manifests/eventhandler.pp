@@ -12,10 +12,8 @@ define nagios::eventhandler (
     $owner              = 'nagios',
     $group              = 'nagios',
     $mode               = '0755',
-    $eventhandler_path  = '/etc/nagios-plugins/config',
+    $eventhandler_path  = '/usr/share/nagios3/plugins/eventhandlers',
 ) {
-  include '::nagios'
-
   file { "${eventhandler_path}/${title}":
     ensure  => $ensure,
     content => $content,

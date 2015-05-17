@@ -1,0 +1,30 @@
+---
+nagios_hosts:
+  testhost:
+    ensure: present
+    alias: '%{::hostname}'
+    address: '%{::ipaddress}'
+    use: generic-host
+    hostgroups: testhostgroup
+    icon_image: base/icon.png
+    notification_period: 24x7
+nagios_services:
+  testservice:
+    check_command: /usr/bin/testcommand
+    use: generic-service
+    host_name: '%{::clientcert}'
+    service_description: 'test command'
+    notification_period: 24x7
+nagios::monitor::plugins:
+  testplugin:
+    content: moo
+nagios::monitor::eventhandlers:
+  testeventhandler:
+    content: moo
+nagios::monitor::hostgroups:
+  testhostgroup: {}
+nagios::monitor::servicegroups:
+  testservicegroup: {}
+nagios::monitor::commands:
+  testcommand:
+    command_line: /usr/bin/whoami
