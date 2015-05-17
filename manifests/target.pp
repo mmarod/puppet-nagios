@@ -2,7 +2,7 @@ class nagios::target(
   $target_host          = undef,
   $target_path          = '/etc/nagios3/conf.d',
   $prefix               = $::clientcert,
-  $local_user           = 'nagios',
+  $local_user           = 'nagsync',
   $remote_user          = 'nagios',
   $use_nrpe             = true,
   $is_monitor           = false,
@@ -10,14 +10,13 @@ class nagios::target(
   Nagios_host<||> -> Rsync::Put<||>
   Nagios_service<||> -> Rsync::Put<||>
 
-  ensure_resource('user', $local_user, { 'ensure'          => 'present',
-                                         'managehome'      => true,
-                                         'home'            => '/home/nagios',
-                                         'purge_ssh_keys'  => true })
+  user { $local_user: ensure => present }
 
   file { '/etc/nagios':
-    ensure => directory,
-    owner  => $local_user
+    ensure  => directory,
+    owner   => $local_user,
+    mode    => '0755',
+    require => User[$local_user]
   } -> Nagios_host <||> -> Nagios_service <||>
 
   $hosts = hiera_hash('nagios_hosts', {})
