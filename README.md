@@ -108,7 +108,7 @@ this out on its own. However, if you are impatient, this is the order you should
 
 ```yaml
 nagios_hosts:
-  testhost:
+  '%{::clientcert}':
     ensure: present
     alias: '%{::hostname}'
     address: '%{::ipaddress}'
