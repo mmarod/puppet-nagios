@@ -32,6 +32,7 @@
 class nagios::target(
   $target_host          = undef,
   $target_path          = '/etc/nagios3/conf.d',
+  $prefix               = $::clientcert,
   $local_user           = 'nagsync',
   $remote_user          = 'nagios',
   $use_nrpe             = true,

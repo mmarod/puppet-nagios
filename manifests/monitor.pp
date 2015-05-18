@@ -36,7 +36,6 @@ class nagios::monitor(
   $servicegroups      = {},
   $commands           = {},
   $manage_firewall    = false,
-  $prefix             = $::clientcert,
   $config_changes     = {}
 ) inherits nagios::params {
   validate_array($packages)
