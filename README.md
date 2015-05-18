@@ -19,23 +19,27 @@ The Nagios module installs and configures the Nagios service.
 
 ## Module Description
 
-This Nagios module uses rsync and storeconfigs to manage Nagios configurations. I made this
-module because the nagios_* types require you to put all of your configurations into
-one file at /etc/nagios/nagios_*.cfg. This requirement makes collecting and merging a large
-number of stored configurations on the monitor a painful experience.
+This Nagios module uses rsync and storeconfigs to manage Nagios configurations.
+I made this module because the nagios_[type] types require you to put all of
+your configurations into large files at /etc/nagios/nagios_[type].cfg. This
+requirement makes collecting and merging a large number of stored configurations
+on the monitor a painful experience.
 
-My solution to this problem is to write the nagios configurations to nagios_*.cfg on each
-node and then rsync the configurations over to the monitor server. This way the merging of
-configuration files occurs on each individual server in smaller jobs.
+My solution to this problem is to write the nagios configurations to
+nagios_[type].cfg on each node and then rsync the configurations over to the
+monitor server. This way the merging of configuration files occurs on each
+individual server in smaller jobs.
 
 ## Setup
 
 ### What Nagios affects
 
-This configuration requires that rsync works which means that port 873 must be open on the
-monitor server. SSH keys are automatically created and distributed using store configs.
+This configuration requires that rsync works which means that port 873 must be
+open on the monitor server. SSH keys are automatically created and distributed
+using store configs.
 
-It will create a user named 'nagsync' and also generate an SSH key for this user.
+It will create a user named 'nagsync' and also generate an SSH key for this
+user.
 
 ### Setup requirements
 
@@ -54,16 +58,18 @@ Storeconfigs must be enabled on the Puppetmaster.
 * puppetlabs/rsync >=0.4.0
 * puppetlabs/firewall >= 1.0.0
 * pdxcat/nrpe >=1.0.0
+* stahnma/epel >=1.0.2
 
 ### Beginning with Nagios
 
-This module requires a little bit of patience to get a target syncing its configs to a monitor.
-The initial Puppet run will not magically make everything work, however, if you simply include
-the `nagios::target` class and wait it will eventually work.
+This module requires a little bit of patience to get a target syncing its
+configs to a monitor.  The initial Puppet run will not magically make everything
+work, however, if you simply include the `nagios::target` class and wait it will
+eventually work.
 
-The monitor should be configured first. To do this, simply include the `nagios::monitor` class
-and optionally also include the `nagios::target` class with `is_monitor` set to true if you want
-the monitor server to monitor itself..
+The monitor should be configured first. To do this, simply include the
+`nagios::monitor` class and optionally also include the `nagios::target` class
+with `is_monitor` set to true if you want the monitor server to monitor itself..
 
 ```puppet
 include '::nagios::monitor'
@@ -82,20 +88,23 @@ class { '::nagios::target':
 }
 ```
 
-Puppet needs to run a couple
-of times before configurations will actually be shared. Here is how it all goes down:
+Puppet needs to run a couple of times before configurations will actually be
+shared. Here is how it all goes down:
 
-1. *Target*: The first Puppet run will configure a user named 'nagsync' and generate an SSH key for it.
-    This key will be used for rsyncing configurations over to the monitor later on.
-2. *Target*: The second Puppet run will export the key generated in the previous step as an
-    export ssh_authorized_key resource.
-3. *Monitor*: Once the key has been exported, it needs to be collected by the monitor. Run
-    Puppet again on the monitor to collect the key.
-4. *Target*: Finally, the configurations are ready to be transferred to the master. Run
-    Puppet again and watch the configurations transfer over to the master.
+1. *Target*: The first Puppet run will configure a user named 'nagsync' and
+generate an SSH key for it.  This key will be used for rsyncing configurations
+over to the monitor later on.
+2. *Target*: The second Puppet run will export the key generated in the
+previous step as an export ssh_authorized_key resource.
+3. *Monitor*: Once the key has been exported, it needs to be collected by the
+monitor. Run Puppet again on the monitor to collect the key.
+4. *Target*: Finally, the configurations are ready to be transferred to the
+master. Run Puppet again and watch the configurations transfer over to the
+master.
 
-You do not need to manually run these steps if you do not want to. Puppet will figure all of
-this out on its own. However, if you are impatient, this is the order you should go in.
+You do not need to manually run these steps if you do not want to. Puppet will
+figure all of this out on its own. However, if you are impatient, this is the
+order you should go in.
 
 ## Usage
 
@@ -181,7 +190,9 @@ The SSH key for the nagsync user.
 
 #### `nagios::target::target_host`
 
-The IP or DNS of the Nagios monitor
+The hostname, fqdn, or ip address of the Nagios monitor. This needs to
+be exactly the same as the value of monitor_host on the monitor for ssh
+key exchanging to work.
 
 #### `nagios::target::target_path`
 
@@ -191,7 +202,8 @@ Default: /etc/nagios/conf.d
 
 #### `nagios::target::prefix`
 
-The name of the prefix for the configuration files that will show up on the monitor.
+The name of the prefix for the configuration files that will show up on the
+monitor.
 
 Default: $::clientcert
 
@@ -219,7 +231,15 @@ Determines whether or not this target is also the monitor.
 
 Default: false
 
-### `nagios::monitor::packages`
+#### `nagios::monitor::monitor_host`
+
+The hostname, fqdn, or ip address of the Nagios monitor. This needs to
+be exactly the same as the value of target_host on the targets for ssh
+key exchanging to work.
+
+Default: $::ipaddress
+
+#### `nagios::monitor::packages`
 
 The Nagios packages
 

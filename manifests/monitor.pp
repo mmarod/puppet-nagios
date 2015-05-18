@@ -6,6 +6,9 @@
 #     is_monitor  => true
 #   }
 #
+# @param monitor_host [String] The domain name or IP address of the monitor.
+#   This value needs to be the same as the target_host param of the targets for
+#   sshkey sharing to work.
 # @param packages [Array] A list of packages to install.
 # @param nagios_user [String] The nagios user.
 # @param nagios_group [String] The nagios group.
@@ -21,6 +24,7 @@
 # @param manage_firewall [Boolean] Whether or not to open port 873 for rsync.
 #
 class nagios::monitor(
+  $monitor_host       = $::ipaddress,
   $packages           = [ 'nagios3', 'nagios-plugins' ],
   $nagios_user        = 'nagios',
   $nagios_group       = 'nagios',
@@ -91,5 +95,11 @@ class nagios::monitor(
       dport  => '873',
       action => 'accept'
     }
+  }
+
+  @@sshkey { $monitor_host:
+    key  => $sshrsakey,
+    type => 'ssh-rsa',
+    tag  => 'nagios-monitor-key'
   }
 }

@@ -20,6 +20,8 @@
 #   }
 #
 # @params target_host [String] The IP or hostname of the Nagios monitor.
+#   This value needs to be the same as the monitor_host param of the monitor for
+#   sshkey sharing to work.
 # @params target_path [String] The remote path to the Nagios conf.d directory.
 # @params prefix [String] The prefix for the configuration files on the monitor.
 # @params local_user [String] The local user to use for rsync'ing configs.
@@ -78,6 +80,8 @@ class nagios::target(
   } else {
     validate_string($target_host)
 
+    Sshkey <<| tag == 'nagios-monitor-key' |>>
+
     file { '/etc/nagios/.ssh':
       ensure  => directory,
       owner   => $local_user,
@@ -123,7 +127,7 @@ class nagios::target(
     }
 
     if $use_nrpe {
-      include '::nrpe'
+      class { '::epel': } -> class{ '::nrpe': }
 
       $nrpe_commands = hiera_hash('nrpe_commands', {})
       $nrpe_plugins = hiera_hash('nrpe_plugins', {})
