@@ -31,14 +31,14 @@ class nagios::monitor(
   $plugin_mode        = '0755',
   $eventhandler_mode  = '0755',
   $plugins            = {},
-  $plugin_path        = '/etc/nagios-plugins/config',
   $eventhandlers      = {},
-  $eventhandler_path  = '/usr/share/nagios3/plugins/eventhandlers',
   $hostgroups         = {},
   $servicegroups      = {},
   $commands           = {},
   $manage_firewall    = false,
-) {
+  $prefix             = $::clientcert,
+  $config_changes     = {}
+) inherits nagios::params {
   validate_array($packages)
   validate_string($nagios_user)
   validate_string($nagios_group)
@@ -55,25 +55,35 @@ class nagios::monitor(
 
   Package<||> -> Ssh_authorized_key<||>
 
-  include rsync::server
-
   ensure_packages($packages)
-  ensure_resource('user', $nagios_user, { 'ensure'          => 'present',
-                                          'managehome'      => true,
-                                          'home'            => '/home/nagios',
-                                          'purge_ssh_keys'  => true })
 
-  file { [ '/etc/nagios3', '/etc/nagios3/conf.d' ]:
+  service { $nagios_service_name:
+    ensure  => running,
+  }
+
+  user { $nagios_user:
+    ensure         => present,
+    managehome     => true,
+    home           => '/home/nagios',
+    purge_ssh_keys => true,
+  }
+
+  file { [ $confdir, "${confdir}/conf.d" ]:
     ensure  => directory,
     owner   => $nagios_user,
     require => Package[$packages]
   }
 
-  Ssh_authorized_key <<| tag == 'nagios-key' |>>
-
-  rsync::server::module { 'nagios':
-    path    => '/etc/nagios3',
-    require => Package[$packages]
+  file {[ '/etc/nagios/nagios_host.cfg',
+          '/etc/nagios/nagios_hostgroup.cfg',
+          '/etc/nagios/nagios_service.cfg',
+          '/etc/nagios/nagios_servicegroup.cfg',
+          '/etc/nagios/nagios_command.cfg']:
+    ensure => present,
+    owner  => $nagios_user,
+    group  => $nagios_user,
+    mode   => '0644',
+    notify => Service[$nagios_service_name]
   }
 
   create_resources('nagios::plugin', $plugins)
@@ -81,6 +91,67 @@ class nagios::monitor(
   create_resources('nagios_hostgroup', $hostgroups)
   create_resources('nagios_servicegroup', $servicegroups)
   create_resources('nagios_command', $commands)
+
+  Ssh_authorized_key <<| tag == 'nagios-key' |>>
+
+  include rsync::server
+
+  rsync::server::module { 'nagios':
+    path    => '${confdir}',
+    require => Package[$packages]
+  }
+
+  augeas { 'custom-nagios-configuration-changes':
+    incl    => "${confdir}/nagios.cfg",
+    lens    => "NagiosCfg.lns",
+    changes => $config_changes,
+    require => Package[$packages]
+  }
+
+  augeas { 'ensure-cfg_file-nagios_host.cfg':
+    incl    => "${confdir}/nagios.cfg",
+    lens    => "NagiosCfg.lns",
+    changes => [ 'ins cfg_file after cfg_file[last()]',
+                 'set cfg_file[last()] /etc/nagios/nagios_host.cfg' ],
+    onlyif  => "match cfg_file[.='/etc/nagios/nagios_host.cfg'] size == 0",
+    require => Package[$packages]
+  }
+
+  augeas { 'ensure-cfg_file-nagios_hostgroup.cfg':
+    incl    => "${confdir}/nagios.cfg",
+    lens    => "NagiosCfg.lns",
+    changes => [ 'ins cfg_file after cfg_file[last()]',
+                 'set cfg_file[last()] /etc/nagios/nagios_hostgroup.cfg' ],
+    onlyif  => "match cfg_file[.='/etc/nagios/nagios_hostgroup.cfg'] size == 0",
+    require => Package[$packages]
+  }
+
+  augeas { 'ensure-cfg_file-nagios_service.cfg':
+    incl    => "${confdir}/nagios.cfg",
+    lens    => "NagiosCfg.lns",
+    changes => [ 'ins cfg_file after cfg_file[last()]',
+                 'set cfg_file[last()] /etc/nagios/nagios_service.cfg' ],
+    onlyif  => "match cfg_file[.='/etc/nagios/nagios_service.cfg'] size == 0",
+    require => Package[$packages]
+  }
+
+  augeas { 'ensure-cfg_file-nagios_servicegroup.cfg':
+    incl    => "${confdir}/nagios.cfg",
+    lens    => "NagiosCfg.lns",
+    changes => [ 'ins cfg_file after cfg_file[last()]',
+                 'set cfg_file[last()] /etc/nagios/nagios_servicegroup.cfg' ],
+    onlyif  => "match cfg_file[.='/etc/nagios/nagios_servicegroup.cfg'] size == 0",
+    require => Package[$packages]
+  }
+
+  augeas { 'ensure-cfg_file-nagios_command.cfg':
+    incl    => "${confdir}/nagios.cfg",
+    lens    => "NagiosCfg.lns",
+    changes => [ 'ins cfg_file after cfg_file[last()]',
+                 'set cfg_file[last()] /etc/nagios/nagios_command.cfg' ],
+    onlyif  => "match cfg_file[.='/etc/nagios/nagios_command.cfg'] size == 0",
+    require => Package[$packages]
+  }
 
   resources { [ 'nagios_hostgroup',
                 'nagios_servicegroup',

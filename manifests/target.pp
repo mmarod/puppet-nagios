@@ -32,14 +32,12 @@
 class nagios::target(
   $target_host          = undef,
   $target_path          = '/etc/nagios3/conf.d',
-  $prefix               = $::clientcert,
   $local_user           = 'nagsync',
   $remote_user          = 'nagios',
   $use_nrpe             = true,
   $is_monitor           = false,
 ) {
   validate_absolute_path($target_path)
-  validate_string($prefix)
   validate_string($local_user)
   validate_string($remote_user)
   validate_bool($use_nrpe)
@@ -67,17 +65,7 @@ class nagios::target(
     purge  => true,
   }
 
-  if $is_monitor {
-    file { "/etc/nagios3/conf.d/${prefix}_host.cfg":
-      ensure => link,
-      target => '/etc/nagios/nagios_host.cfg',
-    }
-
-    file { "/etc/nagios3/conf.d/${prefix}_service.cfg":
-      ensure => link,
-      target => '/etc/nagios/nagios_service.cfg',
-    }
-  } else {
+  if ! $is_monitor {
     validate_string($target_host)
 
     Sshkey <<| tag == 'nagios-monitor-key' |>>
@@ -127,7 +115,7 @@ class nagios::target(
     }
 
     if $use_nrpe {
-      class { '::epel': } -> class{ '::nrpe': }
+      include '::nrpe'
 
       $nrpe_commands = hiera_hash('nrpe_commands', {})
       $nrpe_plugins = hiera_hash('nrpe_plugins', {})

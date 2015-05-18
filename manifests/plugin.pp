@@ -12,7 +12,7 @@ define nagios::plugin (
     $owner        = 'nagios',
     $group        = 'nagios',
     $mode         = '0755',
-    $plugin_path  = '/etc/nagios-plugins/config',
+    $plugin_path  = $nagios::params::plugin_path
 ) {
   file { "${plugin_path}/${title}":
     ensure  => $ensure,
