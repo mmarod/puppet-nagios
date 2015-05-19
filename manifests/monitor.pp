@@ -39,8 +39,6 @@ class nagios::monitor(
   $filebase_escaped = regsubst($filebase, '\.', '_', 'G')
   $config_file = "${confdir_hosts}/${filebase_escaped}.cfg"
 
-  Package<||> -> Ssh_authorized_key<||>
-
   Ssh_authorized_key <<| tag == 'nagios-key' |>>
 
   ensure_packages($packages)
@@ -54,7 +52,7 @@ class nagios::monitor(
     managehome     => true,
     home           => '/home/nagios',
     purge_ssh_keys => true,
-  }
+  } -> Ssh_authorized_key<||>
 
   file { $naginator_confdir:
     ensure  => directory,
