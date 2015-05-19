@@ -7,52 +7,41 @@
 #   }
 #
 # @param monitor_host [String] The domain name or IP address of the monitor.
-#   This value needs to be the same as the target_host param of the targets for
-#   sshkey sharing to work.
+# @param file_base [String] The prefix to the name on the Nagios configs.
 # @param packages [Array] A list of packages to install.
 # @param nagios_user [String] The nagios user.
 # @param nagios_group [String] The nagios group.
-# @param plugin_mode [String] The mode for the Nagios plugins.
-# @param eventhander_mode [String] The mode for the Nagios eventhandlers.
-# @param plugins [Hash] A hash of nagios::plugin types.
-# @param plugin_path [String] The path to the Nagios plugins.
-# @param eventhandlers [Hash] A hash of nagios::eventhandler types.
-# @param eventhandler_path [String] The path to the Nagios eventhandlers.
-# @param hostgroups [Hash] A hash of nagios_hostgroup types.
-# @param servicegroups [Hash] A hash of nagios_servicegroup types.
-# @param commands [Hash] A hash of nagios_comand types.
+# @param cfg_files [Array] A list of cfg_files to include.
+# @param cfg_dirs [Array] A list of cfg_dirs to include.
+# @param config [Hash] A hash of key/value pairs to set options with in nagios.cfg.
 # @param manage_firewall [Boolean] Whether or not to open port 873 for rsync.
 #
 class nagios::monitor(
   $monitor_host       = $::ipaddress,
-  $packages           = [ 'nagios3', 'nagios-plugins' ],
-  $nagios_user        = 'nagios',
-  $nagios_group       = 'nagios',
-  $plugin_mode        = '0755',
-  $eventhandler_mode  = '0755',
-  $plugins            = {},
-  $eventhandlers      = {},
-  $hostgroups         = {},
-  $servicegroups      = {},
-  $commands           = {},
+  $filebase           = $::clientcert,
+  $packages           = $nagios::params::packages,
+  $nagios_user        = $nagios::params::nagios_user,
+  $nagios_group       = $nagios::params::nagios_group,
+  $cfg_files          = $nagios::params::cfg_files,
+  $cfg_dirs           = $nagios::params::cfg_dirs,
+  $config             = {},
   $manage_firewall    = false,
-  $config_changes     = {}
 ) inherits nagios::params {
+  validate_string($monitor_host)
+  validate_string($filebase)
   validate_array($packages)
   validate_string($nagios_user)
   validate_string($nagios_group)
-  validate_string($plugin_mode)
-  validate_string($eventhandler_mode)
-  validate_hash($plugins)
-  validate_absolute_path($plugin_path)
-  validate_hash($eventhandlers)
-  validate_absolute_path($eventhandler_path)
-  validate_hash($hostgroups)
-  validate_hash($servicegroups)
-  validate_hash($commands)
+  validate_array($cfg_files)
+  validate_array($cfg_dirs)
   validate_bool($manage_firewall)
 
+  $filebase_escaped = regsubst($filebase, '\.', '_', 'G')
+  $config_file = "${confdir}/${filebase_escaped}.cfg"
+
   Package<||> -> Ssh_authorized_key<||>
+
+  Ssh_authorized_key <<| tag == 'nagios-key' |>>
 
   ensure_packages($packages)
 
@@ -67,95 +56,139 @@ class nagios::monitor(
     purge_ssh_keys => true,
   }
 
-  file { [ $confdir, "${confdir}/conf.d" ]:
+  file { $naginator_confdir:
+    ensure  => directory,
+    owner   => $nagios_user,
+    mode    => '0755',
+    require => User[$nagios_user]
+  } -> Nagios_host<||> ->
+       Nagios_service<||> ->
+       Nagios_hostgroup<||> ->
+       Nagios_servicegroup<||> ->
+       Nagios_command<||>
+
+  file { $confdir:
     ensure  => directory,
     owner   => $nagios_user,
     require => Package[$packages]
   }
 
-  file {[ '/etc/nagios/nagios_host.cfg',
-          '/etc/nagios/nagios_hostgroup.cfg',
-          '/etc/nagios/nagios_service.cfg',
-          '/etc/nagios/nagios_servicegroup.cfg',
-          '/etc/nagios/nagios_command.cfg']:
+  $aug_file = nag_to_aug($cfg_files, 'cfg_file', $nagios_cfg_path)
+
+  augeas { 'configure-nagios_cfg-cfg_file-settings':
+    incl    => $nagios_cfg_path,
+    lens    => "NagiosCfg.lns",
+    changes => $aug_file['changes'],
+    onlyif  => $aug_file['onlyif'],
+    require => File[$confdir]
+  }
+
+  $aug_dir = nag_to_aug($cfg_dirs, 'cfg_dir', $nagios_cfg_path)
+
+  augeas { 'configure-nagios_cfg-cfg_dir-settings':
+    incl    => $nagios_cfg_path,
+    lens    => "NagiosCfg.lns",
+    changes => $aug_dir['changes'],
+    onlyif  => $aug_dir['onlyif'],
+    require => File[$confdir]
+  }
+
+  $changes_array = join_keys_to_values($config, ' \'"')
+  $changes_quoted = suffix($changes_array, '"\'')
+  $changes = prefix($changes_quoted, 'set ')
+
+  augeas { 'configure-nagios_cfg-custom-settings':
+    incl    => $nagios_cfg_path,
+    lens    => "NagiosCfg.lns",
+    changes => $changes,
+    require => File[$confdir]
+  }
+
+  file {[ "${naginator_confdir}/nagios_host.cfg",
+          "${naginator_confdir}/nagios_hostgroup.cfg",
+          "${naginator_confdir}/nagios_service.cfg",
+          "${naginator_confdir}/nagios_servicegroup.cfg",
+          "${naginator_confdir}/nagios_command.cfg"]:
     ensure => present,
     owner  => $nagios_user,
     group  => $nagios_user,
     mode   => '0644',
-    notify => Service[$nagios_service_name]
+    notify => Service[$nagios_service_name],
+    before => Concat[$config_file]
   }
 
-  create_resources('nagios::plugin', $plugins)
-  create_resources('nagios::eventhandler', $eventhandlers)
-  create_resources('nagios_hostgroup', $hostgroups)
-  create_resources('nagios_servicegroup', $servicegroups)
-  create_resources('nagios_command', $commands)
+  $hosts          = hiera_hash('nagios_hosts', {})
+  $hostgroups     = hiera_hash('nagios_hostgroups', {})
+  $services       = hiera_hash('nagios_services', {})
+  $servicegroups  = hiera_hash('nagios_servicegroups', {})
+  $commands       = hiera_hash('nagios_commands', {})
+  $plugins        = hiera_hash('nagios_plugins', {})
+  $eventhandlers  = hiera_hash('nagios_eventhandlers', {})
 
-  Ssh_authorized_key <<| tag == 'nagios-key' |>>
+  $host_defaults         = { 'ensure'     => 'present' }
+  $service_defaults      = { 'ensure'     => 'present',
+                             'host_name'  => $::clientcert,
+                             'use'        => 'generic-service' }
+  $hostgroup_defaults    = { 'ensure'     => 'present' }
+  $servicegroup_defaults = { 'ensure'     => 'present' }
+  $command_defaults      = { 'ensure'     => 'present' }
+
+  create_resources('nagios_host',           $hosts,         $host_defaults)
+  create_resources('nagios_service',        $services,      $service_defaults)
+  create_resources('nagios_hostgroup',      $hostgroups,    $hostgroup_defaults)
+  create_resources('nagios_servicegroup',   $servicegroups, $servicegroup_defaults)
+  create_resources('nagios_command',        $commands,      $command_defaults)
+  create_resources('nagios::plugin',        $plugins)
+  create_resources('nagios::eventhandler',  $eventhandlers)
+
+  concat { $config_file:
+    owner   => $nagios_user,
+    mode    => '0644'
+  }
+
+  concat::fragment { 'nagios-host-config':
+    target  => $config_file,
+    source  => "${naginator_confdir}/nagios_host.cfg",
+    order   => '01',
+  }
+
+  concat::fragment { 'nagios-hostgroup-config':
+    target  => $config_file,
+    source  => "${naginator_confdir}/nagios_hostgroup.cfg",
+    order   => '02',
+  }
+
+  concat::fragment { 'nagios-service-config':
+    target  => $config_file,
+    source  => "${naginator_confdir}/nagios_service.cfg",
+    order   => '03',
+  }
+
+  concat::fragment { 'nagios-servicegroup-config':
+    target  => $config_file,
+    source  => "${naginator_confdir}/nagios_servicegroup.cfg",
+    order   => '04',
+  }
+
+  concat::fragment { 'nagios-command-config':
+    target  => $config_file,
+    source  => "${naginator_confdir}/nagios_command.cfg",
+    order   => '05',
+  }
+
+  resources { [ 'nagios_host',
+                'nagios_hostgroup',
+                'nagios_service',
+                'nagios_servicegroup',
+                'nagios_command' ]:
+    purge => true,
+  }
 
   include rsync::server
 
   rsync::server::module { 'nagios':
     path    => '${confdir}',
     require => Package[$packages]
-  }
-
-  augeas { 'custom-nagios-configuration-changes':
-    incl    => "${confdir}/nagios.cfg",
-    lens    => "NagiosCfg.lns",
-    changes => $config_changes,
-    require => Package[$packages]
-  }
-
-  augeas { 'ensure-cfg_file-nagios_host.cfg':
-    incl    => "${confdir}/nagios.cfg",
-    lens    => "NagiosCfg.lns",
-    changes => [ 'ins cfg_file after cfg_file[last()]',
-                 'set cfg_file[last()] /etc/nagios/nagios_host.cfg' ],
-    onlyif  => "match cfg_file[.='/etc/nagios/nagios_host.cfg'] size == 0",
-    require => Package[$packages]
-  }
-
-  augeas { 'ensure-cfg_file-nagios_hostgroup.cfg':
-    incl    => "${confdir}/nagios.cfg",
-    lens    => "NagiosCfg.lns",
-    changes => [ 'ins cfg_file after cfg_file[last()]',
-                 'set cfg_file[last()] /etc/nagios/nagios_hostgroup.cfg' ],
-    onlyif  => "match cfg_file[.='/etc/nagios/nagios_hostgroup.cfg'] size == 0",
-    require => Package[$packages]
-  }
-
-  augeas { 'ensure-cfg_file-nagios_service.cfg':
-    incl    => "${confdir}/nagios.cfg",
-    lens    => "NagiosCfg.lns",
-    changes => [ 'ins cfg_file after cfg_file[last()]',
-                 'set cfg_file[last()] /etc/nagios/nagios_service.cfg' ],
-    onlyif  => "match cfg_file[.='/etc/nagios/nagios_service.cfg'] size == 0",
-    require => Package[$packages]
-  }
-
-  augeas { 'ensure-cfg_file-nagios_servicegroup.cfg':
-    incl    => "${confdir}/nagios.cfg",
-    lens    => "NagiosCfg.lns",
-    changes => [ 'ins cfg_file after cfg_file[last()]',
-                 'set cfg_file[last()] /etc/nagios/nagios_servicegroup.cfg' ],
-    onlyif  => "match cfg_file[.='/etc/nagios/nagios_servicegroup.cfg'] size == 0",
-    require => Package[$packages]
-  }
-
-  augeas { 'ensure-cfg_file-nagios_command.cfg':
-    incl    => "${confdir}/nagios.cfg",
-    lens    => "NagiosCfg.lns",
-    changes => [ 'ins cfg_file after cfg_file[last()]',
-                 'set cfg_file[last()] /etc/nagios/nagios_command.cfg' ],
-    onlyif  => "match cfg_file[.='/etc/nagios/nagios_command.cfg'] size == 0",
-    require => Package[$packages]
-  }
-
-  resources { [ 'nagios_hostgroup',
-                'nagios_servicegroup',
-                'nagios_command' ]:
-    purge => true,
   }
 
   if $manage_firewall {

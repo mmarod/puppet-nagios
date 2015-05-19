@@ -3,8 +3,12 @@ class nagios::params {
     'Debian': {
       $plugin_path         = '/usr/lib/nagios/plugins'
       $eventhandler_path   = '/usr/share/nagios3/plugins/eventhandlers'
-      $confdir             = '/etc/nagios3'
+      $nagios_cfg_path     = '/etc/nagios3/nagios.cfg'
+      $confdir             = '/etc/nagios3/conf.d'
       $nagios_service_name = 'nagios3'
+      $cfg_files           = [ '/etc/nagios3/commands.cfg' ]
+      $cfg_dirs            = [ '/etc/nagios-plugins/config', '/etc/nagios3/conf.d' ]
+      $packages            = [ 'nagios3', 'nagios-plugins' ]
     }
     'RedHat': {
       $plugin_path         = $::architecture ? {
@@ -15,9 +19,20 @@ class nagios::params {
         /x86_64/ => '/usr/lib64/nagios/plugins/eventhandlers',
         default  => '/usr/lib/nagios/plugins/eventhandlers',
       }
+      $nagios_cfg_path     = '/etc/nagios/nagios.cfg'
       $confdir             = '/etc/nagios'
       $nagios_service_name = 'nagios'
+      $cfg_files           = [ '/etc/nagios/commands.cfg' ]
+      $cfg_dirs            = [ '/etc/nagios-plugins/config', '/etc/nagios/conf.d' ]
+      $packages            = [ 'nagios', 'nagios-plugins' ]
     }
-    default: {}
+    default: {
+      fail("Unsupported operating system '${::osfamily}'.")
+    }
   }
+  $naginator_confdir  = '/etc/nagios'
+  $plugin_mode        = '0755'
+  $eventhandler_mode  = '0755'
+  $nagios_user        = 'nagios'
+  $nagios_group       = 'nagios'
 }
