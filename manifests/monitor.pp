@@ -65,7 +65,10 @@ class nagios::monitor(
        Nagios_service<||> ->
        Nagios_hostgroup<||> ->
        Nagios_servicegroup<||> ->
-       Nagios_command<||>
+       Nagios_command<||> ->
+       Nagios_contact<||> ->
+       Nagios_contactgroup<||> ->
+       Nagios_timeperiod<||>
 
   file { [ $confdir, $confdir_hosts ]:
     ensure  => directory,
