@@ -9,6 +9,9 @@ class nagios::params {
       $cfg_files           = [ '/etc/nagios3/commands.cfg' ]
       $cfg_dirs            = [ '/etc/nagios-plugins/config', '/etc/nagios3/conf.d' ]
       $packages            = [ 'nagios3', 'nagios-plugins' ]
+      $config_contact      = '/etc/nagios3/conf.d/contacts.cfg'
+      $config_contactgroup = '/etc/nagios3/conf.d/contactgroups.cfg'
+      $config_timeperiod   = '/etc/nagios3/conf.d/timeperiods.cfg'
     }
     'RedHat': {
       $plugin_path         = $::architecture ? {
@@ -25,6 +28,9 @@ class nagios::params {
       $cfg_files           = [ '/etc/nagios/commands.cfg' ]
       $cfg_dirs            = [ '/etc/nagios-plugins/config', '/etc/nagios/conf.d' ]
       $packages            = [ 'nagios', 'nagios-plugins' ]
+      $config_contact      = '/etc/nagios/conf.d/contacts.cfg'
+      $config_contactgroup = '/etc/nagios/conf.d/contactgroups.cfg'
+      $config_timeperiod   = '/etc/nagios/conf.d/timeperiods.cfg'
     }
     default: {
       fail("Unsupported operating system '${::osfamily}'.")

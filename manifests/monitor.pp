@@ -37,7 +37,7 @@ class nagios::monitor(
   validate_bool($manage_firewall)
 
   $filebase_escaped = regsubst($filebase, '\.', '_', 'G')
-  $config_file = "${confdir}/${filebase_escaped}.cfg"
+  $config_file = "${confdir_hosts}/${filebase_escaped}.cfg"
 
   Package<||> -> Ssh_authorized_key<||>
 
@@ -67,7 +67,7 @@ class nagios::monitor(
        Nagios_servicegroup<||> ->
        Nagios_command<||>
 
-  file { $confdir:
+  file { [ $confdir, $confdir_hosts ]:
     ensure  => directory,
     owner   => $nagios_user,
     require => Package[$packages]
@@ -108,13 +108,19 @@ class nagios::monitor(
           "${naginator_confdir}/nagios_hostgroup.cfg",
           "${naginator_confdir}/nagios_service.cfg",
           "${naginator_confdir}/nagios_servicegroup.cfg",
-          "${naginator_confdir}/nagios_command.cfg"]:
+          "${naginator_confdir}/nagios_command.cfg",
+          "${naginator_confdir}/nagios_contact.cfg",
+          "${naginator_confdir}/nagios_contactgroup.cfg",
+          "${naginator_confdir}/nagios_timeperiod.cfg"]:
     ensure => present,
     owner  => $nagios_user,
     group  => $nagios_user,
     mode   => '0644',
     notify => Service[$nagios_service_name],
-    before => Concat[$config_file]
+    before => [ Concat[$config_file],
+                Concat[$config_contact],
+                Concat[$config_contactgroup],
+                Concat[$config_timeperiod] ]
   }
 
   $hosts          = hiera_hash('nagios_hosts', {})
@@ -122,22 +128,32 @@ class nagios::monitor(
   $services       = hiera_hash('nagios_services', {})
   $servicegroups  = hiera_hash('nagios_servicegroups', {})
   $commands       = hiera_hash('nagios_commands', {})
+  $contacts       = hiera_hash('nagios_contacts', {})
+  $contactgroups  = hiera_hash('nagios_contactgroups', {})
+  $timeperiods    = hiera_hash('nagios_timeperiods', {})
   $plugins        = hiera_hash('nagios_plugins', {})
   $eventhandlers  = hiera_hash('nagios_eventhandlers', {})
 
-  $host_defaults         = { 'ensure'     => 'present' }
-  $service_defaults      = { 'ensure'     => 'present',
+  $host_defaults           = { 'ensure'     => 'present',
+                             'use'        => 'generic-host' }
+  $service_defaults        = { 'ensure'     => 'present',
                              'host_name'  => $::clientcert,
                              'use'        => 'generic-service' }
-  $hostgroup_defaults    = { 'ensure'     => 'present' }
-  $servicegroup_defaults = { 'ensure'     => 'present' }
-  $command_defaults      = { 'ensure'     => 'present' }
+  $hostgroup_defaults      = { 'ensure'     => 'present' }
+  $servicegroup_defaults   = { 'ensure'     => 'present' }
+  $command_defaults        = { 'ensure'     => 'present' }
+  $contact_defaults        = { 'ensure'     => 'present' }
+  $contact_group_defaults  = { 'ensure'     => 'present' }
+  $timeperiod_defaults     = { 'ensure'     => 'present' }
 
   create_resources('nagios_host',           $hosts,         $host_defaults)
   create_resources('nagios_service',        $services,      $service_defaults)
   create_resources('nagios_hostgroup',      $hostgroups,    $hostgroup_defaults)
   create_resources('nagios_servicegroup',   $servicegroups, $servicegroup_defaults)
   create_resources('nagios_command',        $commands,      $command_defaults)
+  create_resources('nagios_contact',        $contacts,      $contact_defaults)
+  create_resources('nagios_contactgroup',   $contactgroups, $contactgroup_defaults)
+  create_resources('nagios_timeperiod',     $timeperiods,   $timeperiod_defaults)
   create_resources('nagios::plugin',        $plugins)
   create_resources('nagios::eventhandler',  $eventhandlers)
 
@@ -176,6 +192,39 @@ class nagios::monitor(
     order   => '05',
   }
 
+  concat { $config_contact:
+    owner   => $nagios_user,
+    mode    => '0644'
+  }
+
+  concat::fragment { 'nagios-contact-config':
+    target  => $config_contact,
+    source  => "${naginator_confdir}/nagios_contact.cfg",
+    order   => '01',
+  }
+
+  concat { $config_contactgroup:
+    owner   => $nagios_user,
+    mode    => '0644'
+  }
+
+  concat::fragment { 'nagios-contactgroup-config':
+    target  => $config_contactgroup,
+    source  => "${naginator_confdir}/nagios_contactgroup.cfg",
+    order   => '01',
+  }
+
+  concat { $config_timeperiod:
+    owner   => $nagios_user,
+    mode    => '0644'
+  }
+
+  concat::fragment { 'nagios-timeperiod-config':
+    target  => $config_timeperiod,
+    source  => "${naginator_confdir}/nagios_timeperiod.cfg",
+    order   => '01',
+  }
+
   resources { [ 'nagios_host',
                 'nagios_hostgroup',
                 'nagios_service',
@@ -187,7 +236,7 @@ class nagios::monitor(
   include rsync::server
 
   rsync::server::module { 'nagios':
-    path    => '${confdir}',
+    path    => $confdir_hosts,
     require => Package[$packages]
   }
 
