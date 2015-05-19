@@ -134,26 +134,16 @@ class nagios::monitor(
   $plugins        = hiera_hash('nagios_plugins', {})
   $eventhandlers  = hiera_hash('nagios_eventhandlers', {})
 
-  $host_defaults           = { 'ensure'     => 'present',
-                             'use'        => 'generic-host' }
-  $service_defaults        = { 'ensure'     => 'present',
-                             'host_name'  => $::clientcert,
-                             'use'        => 'generic-service' }
-  $hostgroup_defaults      = { 'ensure'     => 'present' }
-  $servicegroup_defaults   = { 'ensure'     => 'present' }
-  $command_defaults        = { 'ensure'     => 'present' }
-  $contact_defaults        = { 'ensure'     => 'present' }
-  $contact_group_defaults  = { 'ensure'     => 'present' }
-  $timeperiod_defaults     = { 'ensure'     => 'present' }
+  $create_defaults = { 'ensure' => 'present' }
 
-  create_resources('nagios_host',           $hosts,         $host_defaults)
-  create_resources('nagios_service',        $services,      $service_defaults)
-  create_resources('nagios_hostgroup',      $hostgroups,    $hostgroup_defaults)
-  create_resources('nagios_servicegroup',   $servicegroups, $servicegroup_defaults)
-  create_resources('nagios_command',        $commands,      $command_defaults)
-  create_resources('nagios_contact',        $contacts,      $contact_defaults)
-  create_resources('nagios_contactgroup',   $contactgroups, $contactgroup_defaults)
-  create_resources('nagios_timeperiod',     $timeperiods,   $timeperiod_defaults)
+  create_resources('nagios_host',           $hosts,         $create_defaults)
+  create_resources('nagios_service',        $services,      $create_defaults)
+  create_resources('nagios_hostgroup',      $hostgroups,    $create_defaults)
+  create_resources('nagios_servicegroup',   $servicegroups, $create_defaults)
+  create_resources('nagios_command',        $commands,      $create_defaults)
+  create_resources('nagios_contact',        $contacts,      $create_defaults)
+  create_resources('nagios_contactgroup',   $contactgroups, $create_defaults)
+  create_resources('nagios_timeperiod',     $timeperiods,   $create_defaults)
   create_resources('nagios::plugin',        $plugins)
   create_resources('nagios::eventhandler',  $eventhandlers)
 
