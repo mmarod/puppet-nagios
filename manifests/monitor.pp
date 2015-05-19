@@ -220,7 +220,10 @@ class nagios::monitor(
                 'nagios_hostgroup',
                 'nagios_service',
                 'nagios_servicegroup',
-                'nagios_command' ]:
+                'nagios_command',
+                'nagios_contact',
+                'nagios_contactgroup',
+                'nagios_timeperiod' ]:
     purge => true,
   }
 
