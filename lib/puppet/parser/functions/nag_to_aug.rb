@@ -9,7 +9,7 @@ module Puppet::Parser::Functions
     onlyif  = []
 
     match = "['" + values.join("', '") + "']"
-    onlyif = "match #{type} != #{match}"
+    onlyif = "getm #{type} != #{match}"
 
     first = values.shift
     changes = []
