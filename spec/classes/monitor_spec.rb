@@ -6,7 +6,7 @@ describe 'nagios::monitor' do
     :hostname       => 'foo',
     :ipaddress      => '1.2.3.4',
     :clientcert     => 'foo.example.com',
-    :concat_basedir => '/tmp'
+    :concat_basedir => '/var/lib/puppet/concat'
   }}
 
   let(:hiera_config) { 'spec/fixtures/hiera/hiera.yaml' }
@@ -21,7 +21,7 @@ describe 'nagios::monitor' do
 
   it do
     should contain_rsync__server__module('nagios') \
-      .with_path('/etc/nagios3')
+      .with_path('/etc/nagios3/conf.d/hosts')
   end
 
   it do
@@ -38,9 +38,48 @@ describe 'nagios::monitor' do
   end
 
   it do
-    should contain_file('/etc/nagios3') \
+    should contain_file('/etc/nagios') \
+      .with_ensure('directory') \
+      .with_owner('nagios') \
+      .with_mode('0755')
+  end
+
+  it do
+    should contain_file('/etc/nagios3/conf.d') \
       .with_ensure('directory') \
       .with_owner('nagios')
+  end
+
+  it do
+    should contain_file('/etc/nagios3/conf.d/hosts') \
+      .with_ensure('directory') \
+      .with_owner('nagios')
+  end
+
+  it 'should have a cfg_file augeas resource' do
+    should contain_augeas('configure-nagios_cfg-cfg_file-settings')
+  end
+
+  describe_augeas 'configure-nagios_cfg-cfg_file-settings', :lens => 'NagiosCfg.lns', :target => 'etc/nagios3/nagios.cfg' do
+    it 'should contain /etc/nagios3/some.cfg and /etc/nagios3/someother.cfg' do
+      should execute.with_change
+      aug_get('cfg_file[1]').should == '/etc/nagios3/some.cfg'
+      aug_get('cfg_file[2]').should == '/etc/nagios3/someother.cfg'
+      should execute.idempotently
+    end
+  end
+
+  it 'should have a cfg_dir augeas resource' do
+    should contain_augeas('configure-nagios_cfg-cfg_dir-settings')
+  end
+
+  describe_augeas 'configure-nagios_cfg-cfg_dir-settings', :lens => 'NagiosCfg.lns', :target => 'etc/nagios3/nagios.cfg' do
+    it 'should contain /etc/nagios3/somedir and /etc/nagios3/someotherdir' do
+      should execute.with_change
+      aug_get('cfg_dir[1]').should == '/etc/nagios3/somedir'
+      aug_get('cfg_dir[2]').should == '/etc/nagios3/someotherdir'
+      should execute.idempotently
+    end
   end
 
   it do
