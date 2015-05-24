@@ -17,15 +17,16 @@
 # @param manage_firewall [Boolean] Whether or not to open port 873 for rsync.
 #
 class nagios::monitor(
-  $monitor_host       = $::ipaddress,
-  $filebase           = $::clientcert,
-  $packages           = $nagios::params::packages,
-  $nagios_user        = $nagios::params::nagios_user,
-  $nagios_group       = $nagios::params::nagios_group,
-  $cfg_files          = $nagios::params::cfg_files,
-  $cfg_dirs           = $nagios::params::cfg_dirs,
-  $config             = {},
-  $manage_firewall    = false,
+  $monitor_host        = $::ipaddress,
+  $filebase            = $::clientcert,
+  $packages            = $nagios::params::packages,
+  $nagios_user         = $nagios::params::nagios_user,
+  $nagios_group        = $nagios::params::nagios_group,
+  $cfg_files           = $nagios::params::cfg_files,
+  $cfg_dirs            = $nagios::params::cfg_dirs,
+  $config              = {},
+  $manage_firewall     = false,
+  $style               = 'storeconfig',
 ) inherits nagios::params {
   validate_string($monitor_host)
   validate_string($filebase)
@@ -52,8 +53,6 @@ class nagios::monitor(
     purge_ssh_keys => true,
   } -> Ssh_authorized_key<||>
 
-  Ssh_authorized_key <<| tag == 'nagios-key' |>>
-
   file { $naginator_confdir:
     ensure  => directory,
     owner   => $nagios_user,
@@ -68,10 +67,22 @@ class nagios::monitor(
        Nagios_contactgroup<||> ->
        Nagios_timeperiod<||>
 
-  file { [ $confdir, $confdir_hosts ]:
+  file { $confdir:
     ensure  => directory,
     owner   => $nagios_user,
     require => Package[$packages]
+  }
+
+  $purge_confdir_hosts = $style ? {
+    'storeconfig'   => true,
+    default         => undef,
+  }
+
+  file { $confdir_hosts:
+    ensure  => directory,
+    owner   => $nagios_user,
+    require => File[$confdir],
+    purge   => $purge_confdir_hosts,
   }
 
   $aug_file = nag_to_aug($cfg_files, 'cfg_file', $nagios_cfg_path)
@@ -227,25 +238,37 @@ class nagios::monitor(
     purge => true,
   }
 
-  include rsync::server
+  case $style {
+    'rsync': {
+      Ssh_authorized_key <<| tag == 'nagios-key' |>>
 
-  rsync::server::module { 'nagios':
-    path    => $confdir_hosts,
-    require => Package[$packages]
-  }
+      include rsync::server
 
-  if $manage_firewall {
-    firewall { '200 Allow rsync access for Nagios':
-      chain  => 'INPUT',
-      proto  => 'tcp',
-      dport  => '873',
-      action => 'accept'
+      rsync::server::module { 'nagios':
+        path    => $confdir_hosts,
+        require => Package[$packages]
+      }
+
+      if $manage_firewall {
+        firewall { '200 Allow rsync access for Nagios':
+          chain  => 'INPUT',
+          proto  => 'tcp',
+          dport  => '873',
+          action => 'accept'
+        }
+      }
+
+      @@sshkey { $monitor_host:
+        key  => $sshrsakey,
+        type => 'ssh-rsa',
+        tag  => 'nagios-monitor-key'
+      }
     }
-  }
-
-  @@sshkey { $monitor_host:
-    key  => $sshrsakey,
-    type => 'ssh-rsa',
-    tag  => 'nagios-monitor-key'
+    'storeconfig': {
+      Concat <<| tag == 'nagios-configuration' |>>
+    }
+    default: {
+      fail("Invalid distrbution method.")
+    }
   }
 }

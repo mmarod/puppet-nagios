@@ -36,7 +36,7 @@ class nagios::target(
   $local_user           = 'nagsync',
   $remote_user          = 'nagios',
   $use_nrpe             = true,
-  $is_monitor           = false,
+  $style                = 'storeconfig',
 ) inherits nagios::params {
   validate_absolute_path($target_path)
   validate_string($local_user)
@@ -86,13 +86,6 @@ class nagios::target(
   $rsync_dest_service = "${target_host}:${target_path}/${filebase_escaped}_service.cfg"
   $rsync_dest_host = "${target_host}:${target_path}/${filebase_escaped}_host.cfg"
 
-  rsync::put { $rsync_dest_host:
-    user    => $remote_user,
-    keyfile => $keypath,
-    source  => $config_file,
-    require => Concat[$config_file]
-  }
-
   if $::nagios_key_exists == 'yes' {
     @@ssh_authorized_key { "${local_user}@${::clientcert}":
       key  => $::nagios_key,
@@ -111,11 +104,6 @@ class nagios::target(
     create_resources('nrpe::plugin', $nrpe_plugins)
   }
 
-  concat { $config_file:
-    owner   => $local_user,
-    mode    => '0644'
-  }
-
   concat::fragment { 'nagios-host-config':
     target  => $config_file,
     source  => "${naginator_confdir}/nagios_host.cfg",
@@ -130,5 +118,31 @@ class nagios::target(
 
   resources { [ 'nagios_service', 'nagios_host' ]:
     purge  => true,
+  }
+
+  case $style {
+    'rsync': {
+      concat { $config_file:
+        owner => $local_user,
+        mode  => '0644'
+      }
+
+      rsync::put { $rsync_dest_host:
+        user      => $remote_user,
+        keyfile   => $keypath,
+        source    => $config_file,
+        subscribe => Concat[$config_file]
+      }
+    }
+    'storeconfig': {
+      @@concat { $config_file:
+        owner => $local_user,
+        mode  => '0644',
+        tag   => 'nagios-configuration'
+      }
+    }
+    default: {
+      fail("Invalid 'style' parameter '${style}'")
+    }
   }
 }

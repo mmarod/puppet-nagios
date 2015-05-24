@@ -15,16 +15,16 @@ nagios_services:
     host_name: '%{::clientcert}'
     service_description: 'test command'
     notification_period: 24x7
-nagios::monitor::plugins:
+nagios_plugins:
   testplugin:
     content: moo
-nagios::monitor::eventhandlers:
+nagios_eventhandlers:
   testeventhandler:
     content: moo
-nagios::monitor::hostgroups:
+nagios_hostgroups:
   testhostgroup: {}
-nagios::monitor::servicegroups:
+nagios_servicegroups:
   testservicegroup: {}
-nagios::monitor::commands:
+nagios_commands:
   testcommand:
     command_line: /usr/bin/whoami
