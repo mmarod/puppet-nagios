@@ -28,3 +28,11 @@ nagios_servicegroups:
 nagios_commands:
   testcommand:
     command_line: /usr/bin/whoami
+nagios::monitor::cfg_files:
+  - /etc/nagios3/some.cfg
+  - /etc/nagios3/someother.cfg
+nagios::monitor::cfg_dirs:
+  - /etc/nagios3/somedir
+  - /etc/nagios3/someotherdir
+nagios::monitor::config:
+  log_file: /path/to/nagios.log

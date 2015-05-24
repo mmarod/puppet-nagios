@@ -31,7 +31,7 @@
 #
 class nagios::target(
   $target_host          = undef,
-  $target_path          = $nagios::params::confdir_hosts,
+  $target_path          = '/etc/nagios3/conf.d/hosts',
   $filebase             = $::clientcert,
   $local_user           = 'nagsync',
   $remote_user          = 'nagios',
@@ -57,13 +57,15 @@ class nagios::target(
   } -> Nagios_host <||> -> Nagios_service <||>
 
   $filebase_escaped   = regsubst($filebase, '\.', '_', 'G')
-  $config_file        = regsubst("${naginator_confdir}/${filebase_escaped}.cfg", '.', '_')
+  $config_file        = "${naginator_confdir}/${filebase_escaped}.cfg"
 
-  $nagios_hosts       = prefix($hosts, "${filebase_escaped}_")
-  $nagios_hostgroups  = prefix($hostgroups, "${filebase_escaped}_")
+  $create_defaults = { 'ensure' => 'present' }
 
-  create_resources('nagios_host', $nagios_hosts, {'ensure' => 'present'})
-  create_resources('nagios_service', $nagios_services, {'ensure' => 'present', 'host_name' => $::clientcert })
+  $hosts              = hiera_hash('nagios_hosts', {})
+  $services           = hiera_hash('nagios_services', {})
+
+  create_resources('nagios_host',     $hosts,    $create_defaults)
+  create_resources('nagios_service',  $services, $create_defaults)
 
   validate_string($target_host)
 

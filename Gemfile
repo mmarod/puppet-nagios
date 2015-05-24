@@ -2,6 +2,7 @@ source 'https://rubygems.org'
 
 group :rake, :test do
   gem 'puppetlabs_spec_helper', '>=0.8.2', :require => false
+  gem 'rspec-puppet-augeas', :git => 'git://github.com/mmarod/rspec-puppet-augeas.git', :branch => 'change-puppet-user'
 end
 
 group :rake do
@@ -14,6 +15,6 @@ end
 if puppetversion = ENV['PUPPET_GEM_VERSION']
   gem 'puppet', puppetversion, :require => false
 else
-  gem 'puppet', :require => false
+  gem 'puppet', :git => 'git://github.com/mmarod/puppet.git', :branch => 'fix/master/augeas_match_use_value', :require => false
 end
 
