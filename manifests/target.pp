@@ -31,7 +31,7 @@
 #
 class nagios::target(
   $target_host          = undef,
-  $target_path          = '/etc/nagios3/conf.d',
+  $target_path          = $nagios::params::confdir_hosts,
   $filebase             = $::clientcert,
   $local_user           = 'nagsync',
   $remote_user          = 'nagios',
@@ -49,7 +49,7 @@ class nagios::target(
 
   user { $local_user: ensure => present }
 
-  file { '/etc/nagios':
+  file { [ $naginator_confdir, $ssh_confdir ]:
     ensure  => directory,
     owner   => $local_user,
     mode    => '0755',
@@ -57,7 +57,7 @@ class nagios::target(
   } -> Nagios_host <||> -> Nagios_service <||>
 
   $filebase_escaped   = regsubst($filebase, '\.', '_', 'G')
-  $config_file        = regsubst("/etc/nagios/${filebase_escaped}.cfg", '.', '_')
+  $config_file        = regsubst("${naginator_confdir}/${filebase_escaped}.cfg", '.', '_')
 
   $nagios_hosts       = prefix($hosts, "${filebase_escaped}_")
   $nagios_hostgroups  = prefix($hostgroups, "${filebase_escaped}_")
@@ -69,28 +69,22 @@ class nagios::target(
 
   Sshkey <<| tag == 'nagios-monitor-key' |>>
 
-  file { '/etc/nagios/.ssh':
-    ensure  => directory,
-    owner   => $local_user,
-    require => File['/etc/nagios']
-  }
-
   include '::rsync'
 
   $type    = 'rsa'
   $bits    = '2048'
   $comment = 'Nagios SSH key'
-  $keypath = '/etc/nagios/.ssh/id_rsa'
+  $keypath = "${ssh_confdir}/id_rsa"
 
   exec { 'ssh-keygen-nagios':
     command => "/usr/bin/ssh-keygen -t ${type} -b ${bits} -f '${keypath}' -N '' -C '${comment}'",
     user    => $local_user,
     creates => $keypath,
-    require => File['/etc/nagios/.ssh']
+    require => File[$ssh_confdir]
   }
 
-  $rsync_dest_service = "${target_host}:${target_path}/${prefix}_service.cfg"
-  $rsync_dest_host = "${target_host}:${target_path}/${prefix}_host.cfg"
+  $rsync_dest_service = "${target_host}:${target_path}/${filebase_escaped}_service.cfg"
+  $rsync_dest_host = "${target_host}:${target_path}/${filebase_escaped}_host.cfg"
 
   rsync::put { $rsync_dest_host:
     user    => $remote_user,
@@ -124,13 +118,13 @@ class nagios::target(
 
   concat::fragment { 'nagios-host-config':
     target  => $config_file,
-    source  => '/etc/nagios/nagios_host.cfg',
+    source  => "${naginator_confdir}/nagios_host.cfg",
     order   => '01',
   }
 
   concat::fragment { 'nagios-service-config':
     target  => $config_file,
-    source  => '/etc/nagios/nagios_service.cfg',
+    source  => "${naginator_confdir}/nagios_service.cfg",
     order   => '02',
   }
 

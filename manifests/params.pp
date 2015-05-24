@@ -39,6 +39,7 @@ class nagios::params {
     }
   }
   $naginator_confdir  = '/etc/nagios'
+  $ssh_confdir        = '/etc/nagios/.ssh'
   $plugin_mode        = '0755'
   $eventhandler_mode  = '0755'
   $nagios_user        = 'nagios'
