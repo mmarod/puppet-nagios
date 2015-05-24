@@ -34,3 +34,5 @@ nagios::monitor::cfg_files:
 nagios::monitor::cfg_dirs:
   - /etc/nagios3/somedir
   - /etc/nagios3/someotherdir
+nagios::monitor::config:
+  log_file: /path/to/nagios.log

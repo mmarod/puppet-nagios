@@ -82,6 +82,18 @@ describe 'nagios::monitor' do
     end
   end
 
+  it 'should have a custom-settings augeas resource' do
+    should contain_augeas('configure-nagios_cfg-custom-settings')
+  end
+
+  describe_augeas 'configure-nagios_cfg-custom-settings', :lens => 'NagiosCfg.lns', :target => 'etc/nagios3/nagios.cfg' do
+    it 'should contain /etc/nagios3/somedir and /etc/nagios3/someotherdir' do
+      should execute.with_change
+      aug_get('log_file').should == '"/path/to/nagios.log"'
+      should execute.idempotently
+    end
+  end
+
   it do
     should contain_nagios__plugin('testplugin') \
       .with_content('moo')
