@@ -105,10 +105,6 @@ class nagios::monitor(
     owner   => $nagios_user,
   }
 
-  #  exec { 'run-inotify-on-hosts-directory':
-  #  command => $inotify_path,
-  #}
-
   $aug_file = nag_to_aug($cfg_files, 'cfg_file', $nagios_cfg_path)
 
   augeas { 'configure-nagios_cfg-cfg_file-settings':
