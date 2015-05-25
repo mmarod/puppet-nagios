@@ -10,6 +10,7 @@ class nagios::params {
       $inotify_log          = '/var/log/nagios3/inotify.log'
       $inotify_script       = '/usr/sbin/inotify-nagios'
       $inotify_init         = '/etc/init.d/inotify-nagios'
+      $inotify_template     = 'nagios/inotify-nagios.DEBIAN.erb'
       $inotify_default      = '/etc/default/inotify-nagios'
       $inotify_service_name = 'inotify-nagios'
       $nagios_service_name  = 'nagios3'
@@ -29,18 +30,22 @@ class nagios::params {
         /x86_64/ => '/usr/lib64/nagios/plugins/eventhandlers',
         default  => '/usr/lib/nagios/plugins/eventhandlers',
       }
-      $nagios_cfg_path     = '/etc/nagios/nagios.cfg'
-      $confdir             = '/etc/nagios/conf.d'
-      $confdir_hosts       = '/etc/nagios/conf.d/hosts'
-      $logdir              = '/var/log/nagios'
-      $inotify_log         = '/var/log/nagios/inotify.log'
-      $nagios_service_name = 'nagios'
-      $cfg_files           = [ '/etc/nagios/commands.cfg' ]
-      $cfg_dirs            = [ '/etc/nagios-plugins/config', '/etc/nagios/conf.d' ]
-      $packages            = [ 'nagios', 'nagios-plugins', 'screen', 'inotify-tools' ]
-      $config_contact      = '/etc/nagios/conf.d/contacts_puppet.cfg'
-      $config_contactgroup = '/etc/nagios/conf.d/contactgroups_puppet.cfg'
-      $config_timeperiod   = '/etc/nagios/conf.d/timeperiods_puppet.cfg'
+      $nagios_cfg_path      = '/etc/nagios/nagios.cfg'
+      $confdir              = '/etc/nagios/conf.d'
+      $confdir_hosts        = '/etc/nagios/conf.d/hosts'
+      $logdir               = '/var/log/nagios'
+      $inotify_log          = '/var/log/nagios/inotify.log'
+      $inotify_script       = '/usr/sbin/inotify-nagios'
+      $inotify_init         = '/etc/init.d/inotify-nagios'
+      $inotify_template     = 'nagios/inotify-nagios.REDHAT.erb'
+      $inotify_service_name = 'inotify-nagios'
+      $nagios_service_name  = 'nagios'
+      $cfg_files            = [ '/etc/nagios/commands.cfg' ]
+      $cfg_dirs             = [ '/etc/nagios-plugins/config', '/etc/nagios/conf.d' ]
+      $packages             = [ 'nagios', 'nagios-plugins', 'screen', 'inotify-tools' ]
+      $config_contact       = '/etc/nagios/conf.d/contacts_puppet.cfg'
+      $config_contactgroup  = '/etc/nagios/conf.d/contactgroups_puppet.cfg'
+      $config_timeperiod    = '/etc/nagios/conf.d/timeperiods_puppet.cfg'
     }
     default: {
       fail("Unsupported operating system '${::osfamily}'.")

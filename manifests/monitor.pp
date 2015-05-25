@@ -49,7 +49,7 @@ class nagios::monitor(
     ensure  => present,
     mode    => '0755',
     owner   => 'root',
-    content => template('nagios/inotify-nagios.DEBIAN.erb'),
+    content => template($inotify_template),
   }
 
   file { $inotify_script:
