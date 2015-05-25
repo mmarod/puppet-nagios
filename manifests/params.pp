@@ -4,6 +4,7 @@ class nagios::params {
       $plugin_path          = '/usr/lib/nagios/plugins'
       $eventhandler_path    = '/usr/share/nagios3/plugins/eventhandlers'
       $nagios_cfg_path      = '/etc/nagios3/nagios.cfg'
+      $nagios_targets       = '/etc/nagios3/nagios-targets.txt'
       $confdir              = '/etc/nagios3/conf.d'
       $confdir_hosts        = '/etc/nagios3/conf.d/hosts'
       $logdir               = '/var/log/nagios3'
@@ -31,6 +32,7 @@ class nagios::params {
         default  => '/usr/lib/nagios/plugins/eventhandlers',
       }
       $nagios_cfg_path      = '/etc/nagios/nagios.cfg'
+      $nagios_targets       = '/etc/nagios/nagios-targets.txt'
       $confdir              = '/etc/nagios/conf.d'
       $confdir_hosts        = '/etc/nagios/conf.d/hosts'
       $logdir               = '/var/log/nagios'

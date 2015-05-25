@@ -105,6 +105,19 @@ class nagios::monitor(
     owner   => $nagios_user,
   }
 
+  Concat_fragment <<| tag == 'nagios-targets' |>>
+
+  concat_file { $nagios_targets:
+    tag             => 'nagios-targets',
+    ensure_newline  => true,
+  }
+
+  exec { 'remove-unmanaged-hosts':
+    command => "/usr/bin/find ${confdir_hosts} -name '*.cfg' -exec basename {} \; | /bin/grep -Fxvf ${nagios_targets} | /usr/bin/xargs rm",
+    onlyif  => "/usr/bin/find ${confdir_hosts} -name '*.cfg' -exec basename {} \; | /bin/grep -Fxvf ${nagios_targets}",
+    require => Concat_file[$nagios_targets]
+  }
+
   $aug_file = nag_to_aug($cfg_files, 'cfg_file', $nagios_cfg_path)
 
   augeas { 'configure-nagios_cfg-cfg_file-settings':

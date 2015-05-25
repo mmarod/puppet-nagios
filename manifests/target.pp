@@ -104,6 +104,11 @@ class nagios::target(
     create_resources('nrpe::plugin', $nrpe_plugins)
   }
 
+  @@concat_fragment { "nagios_target_${filebase_escaped}":
+    tag     => 'nagios-targets',
+    content => $clientcert,
+  }
+
   concat::fragment { 'nagios-host-config':
     target  => $config_file,
     source  => "${naginator_confdir}/nagios_host.cfg",
