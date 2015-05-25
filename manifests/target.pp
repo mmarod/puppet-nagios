@@ -42,7 +42,6 @@ class nagios::target(
   validate_string($local_user)
   validate_string($remote_user)
   validate_bool($use_nrpe)
-  validate_bool($is_monitor)
 
   Nagios_host<||> -> Rsync::Put<||>
   Nagios_service<||> -> Rsync::Put<||>
