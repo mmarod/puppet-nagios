@@ -36,7 +36,6 @@ class nagios::target(
   $local_user           = 'nagsync',
   $remote_user          = 'nagios',
   $use_nrpe             = true,
-  $style                = 'storeconfig',
 ) inherits nagios::params {
   validate_absolute_path($target_path)
   validate_string($local_user)
@@ -121,29 +120,15 @@ class nagios::target(
     purge  => true,
   }
 
-  case $style {
-    'rsync': {
-      concat { $config_file:
-        owner => $local_user,
-        mode  => '0644'
-      }
+  concat { $config_file:
+    owner => $local_user,
+    mode  => '0644'
+  }
 
-      rsync::put { $rsync_dest_host:
-        user      => $remote_user,
-        keyfile   => $keypath,
-        source    => $config_file,
-        subscribe => Concat[$config_file]
-      }
-    }
-    'storeconfig': {
-      @@concat { $config_file:
-        owner => $local_user,
-        mode  => '0644',
-        tag   => 'nagios-configuration'
-      }
-    }
-    default: {
-      fail("Invalid 'style' parameter '${style}'")
-    }
+  rsync::put { $rsync_dest_host:
+    user      => $remote_user,
+    keyfile   => $keypath,
+    source    => $config_file,
+    subscribe => Concat[$config_file]
   }
 }

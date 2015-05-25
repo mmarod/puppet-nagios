@@ -26,7 +26,6 @@ class nagios::monitor(
   $cfg_dirs            = $nagios::params::cfg_dirs,
   $config              = {},
   $manage_firewall     = false,
-  $style               = 'storeconfig',
 ) inherits nagios::params {
   validate_string($monitor_host)
   validate_string($filebase)
@@ -44,6 +43,34 @@ class nagios::monitor(
 
   service { $nagios_service_name:
     ensure  => running,
+  }
+
+  file { $inotify_init:
+    ensure  => present,
+    mode    => '0755',
+    owner   => 'root',
+    content => template($inotify_template),
+  }
+
+  file { $inotify_script:
+    ensure  => present,
+    mode    => '0755',
+    owner   => 'root',
+    content => template('nagios/inotify-nagios.erb'),
+  }
+
+  if $::osfamily == 'Debian' {
+    file { $inotify_default:
+      ensure  => present,
+      mode    => '0644',
+      content => 'VERBOSE=yes',
+      before  => Service[$inotify_service_name]
+    }
+  }
+
+  service { $inotify_service_name:
+    ensure  => running,
+    require => [ File[$inotify_init], File[$inotify_script] ]
   }
 
   user { $nagios_user:
@@ -71,18 +98,11 @@ class nagios::monitor(
     ensure  => directory,
     owner   => $nagios_user,
     require => Package[$packages]
-  }
-
-  $purge_confdir_hosts = $style ? {
-    'storeconfig'   => true,
-    default         => undef,
-  }
+  } ->
 
   file { $confdir_hosts:
     ensure  => directory,
     owner   => $nagios_user,
-    require => File[$confdir],
-    purge   => $purge_confdir_hosts,
   }
 
   $aug_file = nag_to_aug($cfg_files, 'cfg_file', $nagios_cfg_path)
@@ -238,37 +258,27 @@ class nagios::monitor(
     purge => true,
   }
 
-  case $style {
-    'rsync': {
-      Ssh_authorized_key <<| tag == 'nagios-key' |>>
+  Ssh_authorized_key <<| tag == 'nagios-key' |>>
 
-      include rsync::server
+  include rsync::server
 
-      rsync::server::module { 'nagios':
-        path    => $confdir_hosts,
-        require => Package[$packages]
-      }
+  rsync::server::module { 'nagios':
+    path    => $confdir_hosts,
+    require => Package[$packages]
+  }
 
-      if $manage_firewall {
-        firewall { '200 Allow rsync access for Nagios':
-          chain  => 'INPUT',
-          proto  => 'tcp',
-          dport  => '873',
-          action => 'accept'
-        }
-      }
-
-      @@sshkey { $monitor_host:
-        key  => $sshrsakey,
-        type => 'ssh-rsa',
-        tag  => 'nagios-monitor-key'
-      }
+  if $manage_firewall {
+    firewall { '200 Allow rsync access for Nagios':
+      chain  => 'INPUT',
+      proto  => 'tcp',
+      dport  => '873',
+      action => 'accept'
     }
-    'storeconfig': {
-      Concat <<| tag == 'nagios-configuration' |>>
-    }
-    default: {
-      fail("Invalid distrbution method.")
-    }
+  }
+
+  @@sshkey { $monitor_host:
+    key  => $sshrsakey,
+    type => 'ssh-rsa',
+    tag  => 'nagios-monitor-key'
   }
 }
