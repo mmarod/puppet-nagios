@@ -58,18 +58,6 @@ describe 'nagios::target' do
       .with_notification_period('24x7')
   end
 
-  it do
-    should contain_class('rsync')
-  end
-
-  it do
-    should contain_exec('ssh-keygen-nagios') \
-      .with_command('/usr/bin/ssh-keygen -t rsa -b 2048 -f \'/etc/nagios/.ssh/id_rsa\' -N \'\' -C \'Nagios SSH key\'') \
-      .with_user('nagsync') \
-      .with_creates('/etc/nagios/.ssh/id_rsa') \
-      .with_require('File[/etc/nagios/.ssh]')
-  end
-
   context "with use_nrpe == false" do
     let(:params) {{ :use_nrpe => false }}
 
@@ -95,29 +83,56 @@ describe 'nagios::target' do
   end
 
   it do
-    should contain_concat('/etc/nagios/foo_example_com.cfg') \
+    should contain_concat('/etc/nagios/nagios_config.cfg') \
       .with_owner('nagsync') \
       .with_mode('0644')
   end
 
   it do
     should contain_concat__fragment('nagios-host-config') \
-      .with_target('/etc/nagios/foo_example_com.cfg') \
+      .with_target('/etc/nagios/nagios_config.cfg') \
       .with_source('/etc/nagios/nagios_host.cfg') \
       .with_order('01')
   end
 
   it do
     should contain_concat__fragment('nagios-service-config') \
-      .with_target('/etc/nagios/foo_example_com.cfg') \
+      .with_target('/etc/nagios/nagios_config.cfg') \
       .with_source('/etc/nagios/nagios_service.cfg') \
       .with_order('02')
   end
 
-  it do
-    should contain_rsync__put('1.2.3.5:/etc/nagios3/conf.d/hosts/foo_example_com.cfg') \
-      .with_user('nagios') \
-      .with_keyfile('/etc/nagios/.ssh/id_rsa') \
-      .with_source('/etc/nagios/foo_example_com.cfg')
+  context "with xfer_method == 'storeconfig'" do 
+    let(:params) {{ :xfer_method => 'storeconfig' }}
+
+    it do
+      should_not contain_class('rsync')
+    end
+  end
+
+  context "with xfer_method == 'rsync'" do
+    let(:params) {{
+      :xfer_method => 'rsync',
+      :target_host  => '1.2.3.5'
+    }}
+
+    it do
+      should contain_class('rsync')
+    end
+
+    it do
+      should contain_exec('ssh-keygen-nagios') \
+        .with_command('/usr/bin/ssh-keygen -t rsa -b 2048 -f \'/etc/nagios/.ssh/id_rsa\' -N \'\' -C \'Nagios SSH key\'') \
+        .with_user('nagsync') \
+        .with_creates('/etc/nagios/.ssh/id_rsa') \
+        .with_require('File[/etc/nagios/.ssh]')
+    end
+
+    it do
+      should contain_rsync__put('1.2.3.5:/etc/nagios3/conf.d/hosts/foo_example_com.cfg') \
+        .with_user('nagios') \
+        .with_keyfile('/etc/nagios/.ssh/id_rsa') \
+        .with_source('/etc/nagios/nagios_config.cfg')
+    end
   end
 end

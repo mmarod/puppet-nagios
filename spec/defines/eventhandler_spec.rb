@@ -2,10 +2,14 @@ require 'spec_helper'
 
 describe 'nagios::eventhandler' do
   let(:title) { 'myeventhandler' }
+  let(:facts) {{
+    :osfamily       => 'Debian'
+  }}
 
   context 'with :content set' do
     let(:params) {{
-      :content    => 'moo',
+      :content           => 'moo',
+      :eventhandler_path => '/usr/share/nagios3/plugins/eventhandlers'
     }}
 
     it do
@@ -21,6 +25,7 @@ describe 'nagios::eventhandler' do
   context 'with :source set' do
     let(:params) {{
       :source    => 'moo',
+      :eventhandler_path => '/usr/share/nagios3/plugins/eventhandlers'
     }}
 
     it do

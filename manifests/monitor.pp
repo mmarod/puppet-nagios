@@ -37,22 +37,23 @@ class nagios::monitor(
   validate_bool($manage_firewall)
 
   $filebase_escaped = regsubst($filebase, '\.', '_', 'G')
-  $config_file = "${confdir_hosts}/${filebase_escaped}.cfg"
+  $config_file = "${nagios::params::confdir_hosts}/${filebase_escaped}.cfg"
 
   ensure_packages($packages)
 
-  service { $nagios_service_name:
+  service { $nagios::params::nagios_service_name:
     ensure  => running,
   }
 
-  file { $inotify_init:
-    ensure  => present,
-    mode    => '0755',
-    owner   => 'root',
-    source  => $inotify_source,
+  # inotify is used to reload Nagios when configurations change.
+  file { $nagios::params::inotify_init:
+    ensure => present,
+    mode   => '0755',
+    owner  => 'root',
+    source => $nagios::params::inotify_source,
   }
 
-  file { $inotify_script:
+  file { $nagios::params::inotify_script:
     ensure  => present,
     mode    => '0755',
     owner   => 'root',
@@ -60,17 +61,17 @@ class nagios::monitor(
   }
 
   if $::osfamily == 'Debian' {
-    file { $inotify_default:
+    file { $nagios::params::inotify_default:
       ensure  => present,
       mode    => '0644',
       content => 'VERBOSE=yes',
-      before  => Service[$inotify_service_name]
+      before  => Service[$nagios::params::inotify_service_name]
     }
   }
 
-  service { $inotify_service_name:
+  service { $nagios::params::inotify_service_name:
     ensure  => running,
-    require => [ File[$inotify_init], File[$inotify_script] ]
+    require => [ File[$nagios::params::inotify_init], File[$nagios::params::inotify_script] ]
   }
 
   user { $nagios_user:
@@ -80,100 +81,111 @@ class nagios::monitor(
     purge_ssh_keys => true,
   } -> Ssh_authorized_key<||>
 
-  file { $naginator_confdir:
+  file { $nagios::params::naginator_confdir:
     ensure  => directory,
     owner   => $nagios_user,
     mode    => '0755',
     require => User[$nagios_user]
-  } -> Nagios_host<||> ->
-       Nagios_service<||> ->
-       Nagios_hostgroup<||> ->
-       Nagios_servicegroup<||> ->
-       Nagios_command<||> ->
-       Nagios_contact<||> ->
-       Nagios_contactgroup<||> ->
-       Nagios_timeperiod<||>
+  } ->  Nagios_host<||> ->
+        Nagios_service<||> ->
+        Nagios_hostgroup<||> ->
+        Nagios_servicegroup<||> ->
+        Nagios_command<||> ->
+        Nagios_contact<||> ->
+        Nagios_contactgroup<||> ->
+        Nagios_timeperiod<||>
 
-  file { $confdir:
+  file { $nagios::params::confdir:
     ensure  => directory,
     owner   => $nagios_user,
     require => Package[$packages]
   } ->
 
-  file { $confdir_hosts:
-    ensure  => directory,
-    owner   => $nagios_user,
+  file { $nagios::params::confdir_hosts:
+    ensure => directory,
+    owner  => $nagios_user,
   }
 
+  # Make sure that we are in the nagios-targets.txt file
   @@concat_fragment { "nagios_target_${filebase_escaped}":
     tag     => 'nagios-targets',
     content => "${filebase_escaped}.cfg",
   }
 
-  Concat_fragment <<| tag == 'nagios-targets' |>>
+  # Collect all of the configs with xfer_method set to storeconfig
   File <<| tag == 'nagios-config' |>>
 
-  concat_file { $nagios_targets:
-    tag             => 'nagios-targets',
-    ensure_newline  => true,
+  # Collect all of the nagios::target names and store them in a file
+  Concat_fragment <<| tag == 'nagios-targets' |>>
+
+  concat_file { $nagios::params::nagios_targets:
+    tag            => 'nagios-targets',
+    ensure_newline => true,
   }
 
+  # Purge any hosts that are not collected in the above method
+  # Note: inotify-nagios will automatically reload Nagios upon deletion
   exec { 'remove-unmanaged-hosts':
-    command => "/usr/bin/find ${confdir_hosts} ! -path ${confdir_hosts} -exec basename {} \; | /bin/grep -Fxvf ${nagios_targets} | awk '{print \"${confdir_hosts}/\" \$1}' | /usr/bin/xargs rm",
-    onlyif  => "/usr/bin/find ${confdir_hosts} ! -path ${confdir_hosts} -exec basename {} \; | /bin/grep -Fxvf ${nagios_targets}",
-    require => Concat_file[$nagios_targets]
+    command => "/usr/bin/find ${nagios::params::confdir_hosts} ! -path ${nagios::params::confdir_hosts} -exec basename {} \\; | /bin/grep -Fxvf ${nagios::params::nagios_targets} | awk '{print \"${nagios::params::confdir_hosts}/\" \$1}' | /usr/bin/xargs rm",
+    onlyif  => "/usr/bin/find ${nagios::params::confdir_hosts} ! -path ${nagios::params::confdir_hosts} -exec basename {} \\; | /bin/grep -Fxvf ${nagios::params::nagios_targets}",
+    require => Concat_file[$nagios::params::nagios_targets]
   }
 
-  $aug_file = nag_to_aug($cfg_files, 'cfg_file', $nagios_cfg_path)
+  # Take an array of cfg_file names and turn them into something Augeas can understand.
+  $aug_file = nag_to_aug($cfg_files, 'cfg_file', $nagios::params::nagios_cfg_path)
 
   augeas { 'configure-nagios_cfg-cfg_file-settings':
-    incl    => $nagios_cfg_path,
-    lens    => "NagiosCfg.lns",
+    incl    => $nagios::params::nagios_cfg_path,
+    lens    => 'NagiosCfg.lns',
     changes => $aug_file['changes'],
     onlyif  => $aug_file['onlyif'],
-    require => File[$confdir]
+    require => File[$nagios::params::confdir]
   }
 
-  $aug_dir = nag_to_aug($cfg_dirs, 'cfg_dir', $nagios_cfg_path)
+  # Take an array of cfg_dir names and turn them into something Augeas can understand.
+  $aug_dir = nag_to_aug($cfg_dirs, 'cfg_dir', $nagios::params::nagios_cfg_path)
 
   augeas { 'configure-nagios_cfg-cfg_dir-settings':
-    incl    => $nagios_cfg_path,
-    lens    => "NagiosCfg.lns",
+    incl    => $nagios::params::nagios_cfg_path,
+    lens    => 'NagiosCfg.lns',
     changes => $aug_dir['changes'],
     onlyif  => $aug_dir['onlyif'],
-    require => File[$confdir]
+    require => File[$nagios::params::confdir]
   }
 
+  # Takes a hash of changes to make and applies them with Augeas.
   $changes_array = join_keys_to_values($config, ' \'"')
   $changes_quoted = suffix($changes_array, '"\'')
   $changes = prefix($changes_quoted, 'set ')
 
   augeas { 'configure-nagios_cfg-custom-settings':
-    incl    => $nagios_cfg_path,
-    lens    => "NagiosCfg.lns",
+    incl    => $nagios::params::nagios_cfg_path,
+    lens    => 'NagiosCfg.lns',
     changes => $changes,
-    require => File[$confdir]
+    require => File[$nagios::params::confdir]
   }
 
-  file {[ "${naginator_confdir}/nagios_host.cfg",
-          "${naginator_confdir}/nagios_hostgroup.cfg",
-          "${naginator_confdir}/nagios_service.cfg",
-          "${naginator_confdir}/nagios_servicegroup.cfg",
-          "${naginator_confdir}/nagios_command.cfg",
-          "${naginator_confdir}/nagios_contact.cfg",
-          "${naginator_confdir}/nagios_contactgroup.cfg",
-          "${naginator_confdir}/nagios_timeperiod.cfg"]:
+  # Ensure that all of these files exist before using Concat on them.
+  file {[ "${nagios::params::naginator_confdir}/nagios_host.cfg",
+          "${nagios::params::naginator_confdir}/nagios_hostgroup.cfg",
+          "${nagios::params::naginator_confdir}/nagios_service.cfg",
+          "${nagios::params::naginator_confdir}/nagios_servicegroup.cfg",
+          "${nagios::params::naginator_confdir}/nagios_command.cfg",
+          "${nagios::params::naginator_confdir}/nagios_contact.cfg",
+          "${nagios::params::naginator_confdir}/nagios_contactgroup.cfg",
+          "${nagios::params::naginator_confdir}/nagios_timeperiod.cfg"]:
     ensure => present,
     owner  => $nagios_user,
     group  => $nagios_user,
     mode   => '0644',
-    notify => Service[$nagios_service_name],
+    notify => Service[$nagios::params::nagios_service_name],
     before => [ Concat[$config_file],
-                Concat[$config_contact],
-                Concat[$config_contactgroup],
-                Concat[$config_timeperiod] ]
+                Concat[$nagios::params::config_contact],
+                Concat[$nagios::params::config_contactgroup],
+                Concat[$nagios::params::config_timeperiod] ]
   }
 
+  # Collect data from Hiera
   $hosts          = hiera_hash('nagios_hosts', {})
   $hostgroups     = hiera_hash('nagios_hostgroups', {})
   $services       = hiera_hash('nagios_services', {})
@@ -187,6 +199,7 @@ class nagios::monitor(
 
   $create_defaults = { 'ensure' => 'present' }
 
+  # Create Nagios resources
   create_resources('nagios_host',           $hosts,         $create_defaults)
   create_resources('nagios_service',        $services,      $create_defaults)
   create_resources('nagios_hostgroup',      $hostgroups,    $create_defaults)
@@ -198,74 +211,79 @@ class nagios::monitor(
   create_resources('nagios::plugin',        $plugins)
   create_resources('nagios::eventhandler',  $eventhandlers)
 
+  # Merge host, hostgroup, service, servicegroup, and command into one file
   concat { $config_file:
-    owner   => $nagios_user,
-    mode    => '0644'
+    owner => $nagios_user,
+    mode  => '0644'
   }
 
   concat::fragment { 'nagios-host-config':
-    target  => $config_file,
-    source  => "${naginator_confdir}/nagios_host.cfg",
-    order   => '01',
+    target => $config_file,
+    source => "${nagios::params::naginator_confdir}/nagios_host.cfg",
+    order  => '01',
   }
 
   concat::fragment { 'nagios-hostgroup-config':
-    target  => $config_file,
-    source  => "${naginator_confdir}/nagios_hostgroup.cfg",
-    order   => '02',
+    target => $config_file,
+    source => "${nagios::params::naginator_confdir}/nagios_hostgroup.cfg",
+    order  => '02',
   }
 
   concat::fragment { 'nagios-service-config':
-    target  => $config_file,
-    source  => "${naginator_confdir}/nagios_service.cfg",
-    order   => '03',
+    target => $config_file,
+    source => "${nagios::params::naginator_confdir}/nagios_service.cfg",
+    order  => '03',
   }
 
   concat::fragment { 'nagios-servicegroup-config':
-    target  => $config_file,
-    source  => "${naginator_confdir}/nagios_servicegroup.cfg",
-    order   => '04',
+    target => $config_file,
+    source => "${nagios::params::naginator_confdir}/nagios_servicegroup.cfg",
+    order  => '04',
   }
 
   concat::fragment { 'nagios-command-config':
-    target  => $config_file,
-    source  => "${naginator_confdir}/nagios_command.cfg",
-    order   => '05',
+    target => $config_file,
+    source => "${nagios::params::naginator_confdir}/nagios_command.cfg",
+    order  => '05',
   }
 
-  concat { $config_contact:
-    owner   => $nagios_user,
-    mode    => '0644'
+  # This essentially copies /etc/nagios/nagios_contact.cfg to /etc/nagios3/conf.d/contacts_puppet.cfg
+  concat { $nagios::params::config_contact:
+    owner => $nagios_user,
+    mode  => '0644'
   }
 
   concat::fragment { 'nagios-contact-config':
-    target  => $config_contact,
-    source  => "${naginator_confdir}/nagios_contact.cfg",
-    order   => '01',
+    target => $nagios::params::config_contact,
+    source => "${nagios::params::naginator_confdir}/nagios_contact.cfg",
+    order  => '01',
   }
 
-  concat { $config_contactgroup:
-    owner   => $nagios_user,
-    mode    => '0644'
+  # This essentially copies /etc/nagios/nagios_contactgroup.cfg to /etc/nagios3/conf.d/contactgroups_puppet.cfg
+  concat { $nagios::params::config_contactgroup:
+    owner => $nagios_user,
+    mode  => '0644'
   }
 
   concat::fragment { 'nagios-contactgroup-config':
-    target  => $config_contactgroup,
-    source  => "${naginator_confdir}/nagios_contactgroup.cfg",
-    order   => '01',
+    target => $nagios::params::config_contactgroup,
+    source => "${nagios::params::naginator_confdir}/nagios_contactgroup.cfg",
+    order  => '01',
   }
 
-  concat { $config_timeperiod:
-    owner   => $nagios_user,
-    mode    => '0644'
+  # This essentially copies /etc/nagios/nagios_timeperiod.cfg to /etc/nagios3/conf.d/timeperiods_puppet.cfg
+  concat { $nagios::params::config_timeperiod:
+    owner => $nagios_user,
+    mode  => '0644'
   }
 
   concat::fragment { 'nagios-timeperiod-config':
-    target  => $config_timeperiod,
-    source  => "${naginator_confdir}/nagios_timeperiod.cfg",
-    order   => '01',
+    target => $nagios::params::config_timeperiod,
+    source => "${nagios::params::naginator_confdir}/nagios_timeperiod.cfg",
+    order  => '01',
   }
 
+  # Purge unmanaged resources
   resources { [ 'nagios_host',
                 'nagios_hostgroup',
                 'nagios_service',
@@ -277,12 +295,13 @@ class nagios::monitor(
     purge => true,
   }
 
+  # Collect SSH keys from targets for rsync usage
   Ssh_authorized_key <<| tag == 'nagios-key' |>>
 
   include rsync::server
 
   rsync::server::module { 'nagios':
-    path    => $confdir_hosts,
+    path    => $nagios::params::confdir_hosts,
     require => Package[$packages]
   }
 
@@ -295,8 +314,9 @@ class nagios::monitor(
     }
   }
 
+  # Distribute the monitor host key to targets
   @@sshkey { $monitor_host:
-    key  => $sshrsakey,
+    key  => $nagios::params::sshrsakey,
     type => 'ssh-rsa',
     tag  => 'nagios-monitor-key'
   }
