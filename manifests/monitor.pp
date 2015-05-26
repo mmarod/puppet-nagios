@@ -105,6 +105,11 @@ class nagios::monitor(
     owner   => $nagios_user,
   }
 
+  @@concat_fragment { "nagios_target_${filebase_escaped}":
+    tag     => 'nagios-targets',
+    content => "${filebase_escaped}.cfg",
+  }
+
   Concat_fragment <<| tag == 'nagios-targets' |>>
 
   concat_file { $nagios_targets:
@@ -113,8 +118,8 @@ class nagios::monitor(
   }
 
   exec { 'remove-unmanaged-hosts':
-    command => "/usr/bin/find ${confdir_hosts} -name '*.cfg' -exec basename {} \; | /bin/grep -Fxvf ${nagios_targets} | /usr/bin/xargs rm",
-    onlyif  => "/usr/bin/find ${confdir_hosts} -name '*.cfg' -exec basename {} \; | /bin/grep -Fxvf ${nagios_targets}",
+    command => "/usr/bin/find ${confdir_hosts} ! -path ${confdir_hosts} -exec basename {} \; | /bin/grep -Fxvf ${nagios_targets} | awk '{print \"${confdir_hosts}/\" \$1}' | /usr/bin/xargs rm",
+    onlyif  => "/usr/bin/find ${confdir_hosts} ! -path ${confdir_hosts} -exec basename {} \; | /bin/grep -Fxvf ${nagios_targets}",
     require => Concat_file[$nagios_targets]
   }
 

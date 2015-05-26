@@ -83,8 +83,7 @@ class nagios::target(
     require => File[$ssh_confdir]
   }
 
-  $rsync_dest_service = "${target_host}:${target_path}/${filebase_escaped}_service.cfg"
-  $rsync_dest_host = "${target_host}:${target_path}/${filebase_escaped}_host.cfg"
+  $rsync_dest = "${target_host}:${target_path}/${filebase_escaped}.cfg"
 
   if $::nagios_key_exists == 'yes' {
     @@ssh_authorized_key { "${local_user}@${::clientcert}":
@@ -106,7 +105,7 @@ class nagios::target(
 
   @@concat_fragment { "nagios_target_${filebase_escaped}":
     tag     => 'nagios-targets',
-    content => $clientcert,
+    content => "${filebase_escaped}.cfg",
   }
 
   concat::fragment { 'nagios-host-config':
@@ -130,7 +129,7 @@ class nagios::target(
     mode  => '0644'
   }
 
-  rsync::put { $rsync_dest_host:
+  rsync::put { $rsync_dest:
     user      => $remote_user,
     keyfile   => $keypath,
     source    => $config_file,
