@@ -11,7 +11,7 @@ class nagios::params {
       $inotify_log          = '/var/log/nagios3/inotify.log'
       $inotify_script       = '/usr/sbin/inotify-nagios'
       $inotify_init         = '/etc/init.d/inotify-nagios'
-      $inotify_template     = 'nagios/inotify-nagios.DEBIAN.erb'
+      $inotify_source       = 'puppet:///modules/nagios/inotify-nagios.DEBIAN.erb'
       $inotify_default      = '/etc/default/inotify-nagios'
       $inotify_service_name = 'inotify-nagios'
       $nagios_service_name  = 'nagios3'
@@ -39,7 +39,7 @@ class nagios::params {
       $inotify_log          = '/var/log/nagios/inotify.log'
       $inotify_script       = '/usr/sbin/inotify-nagios'
       $inotify_init         = '/etc/init.d/inotify-nagios'
-      $inotify_template     = 'nagios/inotify-nagios.REDHAT.erb'
+      $inotify_source       = 'puppet:///modules/nagios/inotify-nagios.REDHAT.erb'
       $inotify_service_name = 'inotify-nagios'
       $nagios_service_name  = 'nagios'
       $cfg_files            = [ '/etc/nagios/commands.cfg' ]

@@ -27,6 +27,21 @@ describe 'nagios::monitor' do
   it do
     should contain_package('nagios3')
     should contain_package('nagios-plugins')
+    should contain_package('inotify-tools')
+    should contain_package('screen')
+  end
+
+  it do
+    should contain_service('nagios3')
+    should contain_service('inotify-nagios')
+  end
+
+  it do
+    should contain_file('/etc/init.d/inotify-nagios') \
+      .with_ensure('present') \
+      .with_mode('0755') \
+      .with_owner('root') \
+      .with_content(/inotify-nagios/)
   end
 
   it do

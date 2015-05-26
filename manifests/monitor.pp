@@ -49,7 +49,7 @@ class nagios::monitor(
     ensure  => present,
     mode    => '0755',
     owner   => 'root',
-    content => template($inotify_template),
+    source  => $inotify_source,
   }
 
   file { $inotify_script:
