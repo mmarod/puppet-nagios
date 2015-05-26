@@ -36,6 +36,7 @@ class nagios::target(
   $local_user           = 'nagsync',
   $remote_user          = 'nagios',
   $use_nrpe             = true,
+  $xfer_method          = $nagios::params::xfer_method,
 ) inherits nagios::params {
   validate_absolute_path($target_path)
   validate_string($local_user)
@@ -55,7 +56,7 @@ class nagios::target(
   } -> Nagios_host <||> -> Nagios_service <||>
 
   $filebase_escaped   = regsubst($filebase, '\.', '_', 'G')
-  $config_file        = "${naginator_confdir}/${filebase_escaped}.cfg"
+  $config_file        = "${naginator_confdir}/nagios_config.cfg"
 
   $create_defaults = { 'ensure' => 'present' }
 
@@ -66,42 +67,6 @@ class nagios::target(
   create_resources('nagios_service',  $services, $create_defaults)
 
   validate_string($target_host)
-
-  Sshkey <<| tag == 'nagios-monitor-key' |>>
-
-  include '::rsync'
-
-  $type    = 'rsa'
-  $bits    = '2048'
-  $comment = 'Nagios SSH key'
-  $keypath = "${ssh_confdir}/id_rsa"
-
-  exec { 'ssh-keygen-nagios':
-    command => "/usr/bin/ssh-keygen -t ${type} -b ${bits} -f '${keypath}' -N '' -C '${comment}'",
-    user    => $local_user,
-    creates => $keypath,
-    require => File[$ssh_confdir]
-  }
-
-  $rsync_dest = "${target_host}:${target_path}/${filebase_escaped}.cfg"
-
-  if $::nagios_key_exists == 'yes' {
-    @@ssh_authorized_key { "${local_user}@${::clientcert}":
-      key  => $::nagios_key,
-      user => $remote_user,
-      type => 'ssh-rsa',
-      tag  => 'nagios-key',
-    }
-  }
-
-  if $use_nrpe {
-    include '::nrpe'
-
-    $nrpe_commands = hiera_hash('nrpe_commands', {})
-    $nrpe_plugins = hiera_hash('nrpe_plugins', {})
-    create_resources('nrpe::command', $nrpe_commands)
-    create_resources('nrpe::plugin', $nrpe_plugins)
-  }
 
   @@concat_fragment { "nagios_target_${filebase_escaped}":
     tag     => 'nagios-targets',
@@ -120,19 +85,70 @@ class nagios::target(
     order   => '02',
   }
 
-  resources { [ 'nagios_service', 'nagios_host' ]:
-    purge  => true,
-  }
-
   concat { $config_file:
     owner => $local_user,
     mode  => '0644'
   }
 
-  rsync::put { $rsync_dest:
-    user      => $remote_user,
-    keyfile   => $keypath,
-    source    => $config_file,
-    subscribe => Concat[$config_file]
+  case $xfer_method {
+    'storeconfig': {
+      @@file { "${target_path}/${filebase_escaped}.cfg":
+        tag       => 'nagios-config',
+        owner     => $remote_user,
+        mode      => '0644',
+        content   => $::nagios_config,
+      }
+    }
+    'rsync': {
+      Sshkey <<| tag == 'nagios-monitor-key' |>>
+
+      include '::rsync'
+
+      $type    = 'rsa'
+      $bits    = '2048'
+      $comment = 'Nagios SSH key'
+      $keypath = "${ssh_confdir}/id_rsa"
+
+      exec { 'ssh-keygen-nagios':
+        command => "/usr/bin/ssh-keygen -t ${type} -b ${bits} -f '${keypath}' -N '' -C '${comment}'",
+        user    => $local_user,
+        creates => $keypath,
+        require => File[$ssh_confdir]
+      }
+
+      $rsync_dest = "${target_host}:${target_path}/${filebase_escaped}.cfg"
+
+      if $::nagios_key_exists == 'yes' {
+        @@ssh_authorized_key { "${local_user}@${::clientcert}":
+          key  => $::nagios_key,
+          user => $remote_user,
+          type => 'ssh-rsa',
+          tag  => 'nagios-key',
+        }
+      }
+
+      rsync::put { $rsync_dest:
+        user      => $remote_user,
+        keyfile   => $keypath,
+        source    => $config_file,
+        subscribe => Concat[$config_file]
+      }
+    }
+    default: {
+      fail("Invalid 'xfer_method' parameter '${xfer_method}'. Allowed values are 'storeconfig' and 'rsync'")
+    }
+  }
+
+  resources { [ 'nagios_service', 'nagios_host' ]:
+    purge  => true,
+  }
+
+  if $use_nrpe {
+    include '::nrpe'
+
+    $nrpe_commands = hiera_hash('nrpe_commands', {})
+    $nrpe_plugins = hiera_hash('nrpe_plugins', {})
+    create_resources('nrpe::command', $nrpe_commands)
+    create_resources('nrpe::plugin', $nrpe_plugins)
   }
 }

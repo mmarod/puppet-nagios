@@ -21,6 +21,7 @@ class nagios::params {
       $config_contact       = '/etc/nagios3/conf.d/contacts_puppet.cfg'
       $config_contactgroup  = '/etc/nagios3/conf.d/contactgroups_puppet.cfg'
       $config_timeperiod    = '/etc/nagios3/conf.d/timeperiods_puppet.cfg'
+      $xfer_method          = 'rsync'
     }
     'RedHat': {
       $plugin_path         = $::architecture ? {
@@ -48,6 +49,7 @@ class nagios::params {
       $config_contact       = '/etc/nagios/conf.d/contacts_puppet.cfg'
       $config_contactgroup  = '/etc/nagios/conf.d/contactgroups_puppet.cfg'
       $config_timeperiod    = '/etc/nagios/conf.d/timeperiods_puppet.cfg'
+      $xfer_method          = 'rsync'
     }
     default: {
       fail("Unsupported operating system '${::osfamily}'.")

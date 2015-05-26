@@ -111,6 +111,7 @@ class nagios::monitor(
   }
 
   Concat_fragment <<| tag == 'nagios-targets' |>>
+  File <<| tag == 'nagios-config' |>>
 
   concat_file { $nagios_targets:
     tag             => 'nagios-targets',
