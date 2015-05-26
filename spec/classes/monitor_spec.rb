@@ -20,11 +20,6 @@ describe 'nagios::monitor' do
   end
 
   it do
-    should contain_rsync__server__module('nagios') \
-      .with_path('/etc/nagios3/conf.d/hosts')
-  end
-
-  it do
     should contain_package('nagios3')
     should contain_package('nagios-plugins')
     should contain_package('inotify-tools')
@@ -33,7 +28,6 @@ describe 'nagios::monitor' do
 
   it do
     should contain_service('nagios3')
-    should contain_service('inotify-nagios')
   end
 
   it do
@@ -41,7 +35,30 @@ describe 'nagios::monitor' do
       .with_ensure('present') \
       .with_mode('0755') \
       .with_owner('root') \
-      .with_content(/inotify-nagios/)
+      .with_source('puppet:///modules/nagios/inotify-nagios.DEBIAN.erb')
+  end
+
+  it do
+    should contain_file('/usr/sbin/inotify-nagios') \
+      .with_ensure('present') \
+      .with_mode('0755') \
+      .with_owner('root') \
+      .with_content(/\/var\/log\/nagios3\/inotify.log/) \
+      .with_content(/\/etc\/nagios3\/conf\.d\/hosts/)
+  end
+
+  it do
+    should contain_file('/etc/default/inotify-nagios') \
+      .with_ensure('present') \
+      .with_mode('0644') \
+      .with_content('VERBOSE=yes') \
+      .with_before('Service[inotify-nagios]')
+  end
+
+  it do
+    should contain_service('inotify-nagios') \
+      .with_require(/File\[\/etc\/init\.d\/inotify-nagios\]/) \
+      .with_require(/File\[\/usr\/sbin\/inotify-nagios\]/)
   end
 
   it do
@@ -69,6 +86,19 @@ describe 'nagios::monitor' do
     should contain_file('/etc/nagios3/conf.d/hosts') \
       .with_ensure('directory') \
       .with_owner('nagios')
+  end
+
+  it do
+    should contain_concat_file('/etc/nagios3/nagios-targets.txt') \
+      .with_tag('nagios-targets') \
+      .with_ensure_newline(true)
+  end
+
+  it do
+    should contain_exec('remove-unmanaged-hosts') \
+      .with_command("/usr/bin/find /etc/nagios3/conf.d/hosts ! -path /etc/nagios3/conf.d/hosts -exec basename {} \\; | /bin/grep -Fxvf /etc/nagios3/nagios-targets.txt | awk '{print \"/etc/nagios3/conf.d/hosts/\" \$1}' | /usr/bin/xargs rm") \
+      .with_onlyif("/usr/bin/find /etc/nagios3/conf.d/hosts ! -path /etc/nagios3/conf.d/hosts -exec basename {} \\; | /bin/grep -Fxvf /etc/nagios3/nagios-targets.txt") \
+      .with_require('Concat_file[/etc/nagios3/nagios-targets.txt]')
   end
 
   it 'should have a cfg_file augeas resource' do
@@ -110,6 +140,19 @@ describe 'nagios::monitor' do
   end
 
   it do
+    should contain_file('/etc/nagios/nagios_host.cfg') \
+      .with_ensure('present') \
+      .with_owner('nagios') \
+      .with_group('nagios') \
+      .with_mode('0644') \
+      .with_notify('Service[nagios3]') \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/hosts\/foo_example_com.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contacts_puppet.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contactgroups_puppet.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/timeperiods_puppet.cfg\]/)
+  end
+
+  it do
     should contain_nagios__plugin('testplugin') \
       .with_content('moo')
   end
@@ -117,6 +160,27 @@ describe 'nagios::monitor' do
   it do
     should contain_nagios__eventhandler('testeventhandler') \
       .with_content('moo')
+  end
+
+  it do
+    should contain_nagios_host('testhost') \
+      .with_ensure('present') \
+      .with_alias('foo') \
+      .with_address('1.2.3.4') \
+      .with_use('generic-host') \
+      .with_hostgroups('testhostgroup') \
+      .with_icon_image('base/icon.png') \
+      .with_notification_period('24x7')
+  end
+
+  it do
+    should contain_nagios_service('testservice') \
+      .with_ensure('present') \
+      .with_check_command('/usr/bin/testcommand') \
+      .with_use('generic-service') \
+      .with_host_name('foo.example.com') \
+      .with_service_description('test command') \
+      .with_notification_period('24x7')
   end
 
   it do
@@ -131,6 +195,104 @@ describe 'nagios::monitor' do
     should contain_nagios_command('testcommand')
   end
 
+  it do
+    should contain_nagios_contact('testcontact')
+  end
+
+  it do
+    should contain_nagios_contactgroup('testcontactgroup')
+  end
+
+  it do
+    should contain_nagios_timeperiod('testtimeperiod')
+  end
+
+  it do
+    should contain_concat('/etc/nagios3/conf.d/hosts/foo_example_com.cfg') \
+      .with_owner('nagios') \
+      .with_mode('0644')
+  end
+
+  it do
+    should contain_concat__fragment('nagios-host-config') \
+      .with_target('/etc/nagios3/conf.d/hosts/foo_example_com.cfg') \
+      .with_source('/etc/nagios/nagios_host.cfg') \
+      .with_order('01')
+  end
+
+  it do
+    should contain_concat__fragment('nagios-hostgroup-config') \
+      .with_target('/etc/nagios3/conf.d/hosts/foo_example_com.cfg') \
+      .with_source('/etc/nagios/nagios_hostgroup.cfg') \
+      .with_order('02')
+  end
+
+  it do
+    should contain_concat__fragment('nagios-service-config') \
+      .with_target('/etc/nagios3/conf.d/hosts/foo_example_com.cfg') \
+      .with_source('/etc/nagios/nagios_service.cfg') \
+      .with_order('03')
+  end
+
+  it do
+    should contain_concat__fragment('nagios-servicegroup-config') \
+      .with_target('/etc/nagios3/conf.d/hosts/foo_example_com.cfg') \
+      .with_source('/etc/nagios/nagios_servicegroup.cfg') \
+      .with_order('04')
+  end
+
+  it do
+    should contain_concat__fragment('nagios-command-config') \
+      .with_target('/etc/nagios3/conf.d/hosts/foo_example_com.cfg') \
+      .with_source('/etc/nagios/nagios_command.cfg') \
+      .with_order('05')
+  end
+
+  it do
+    should contain_concat('/etc/nagios3/conf.d/contacts_puppet.cfg') \
+      .with_owner('nagios') \
+      .with_mode('0644')
+  end
+
+  it do
+    should contain_concat__fragment('nagios-contact-config') \
+      .with_target('/etc/nagios3/conf.d/contacts_puppet.cfg') \
+      .with_source('/etc/nagios/nagios_contact.cfg') \
+      .with_order('01')
+  end
+
+  it do
+    should contain_concat('/etc/nagios3/conf.d/contactgroups_puppet.cfg') \
+      .with_owner('nagios') \
+      .with_mode('0644')
+  end
+
+  it do
+    should contain_concat__fragment('nagios-contactgroup-config') \
+      .with_target('/etc/nagios3/conf.d/contactgroups_puppet.cfg') \
+      .with_source('/etc/nagios/nagios_contactgroup.cfg') \
+      .with_order('01')
+  end
+
+  it do
+    should contain_concat('/etc/nagios3/conf.d/timeperiods_puppet.cfg') \
+      .with_owner('nagios') \
+      .with_mode('0644')
+  end
+
+  it do
+    should contain_concat__fragment('nagios-timeperiod-config') \
+      .with_target('/etc/nagios3/conf.d/timeperiods_puppet.cfg') \
+      .with_source('/etc/nagios/nagios_timeperiod.cfg') \
+      .with_order('01')
+  end
+
+  it do
+    should contain_rsync__server__module('nagios') \
+      .with_path('/etc/nagios3/conf.d/hosts') \
+      .with_require(/Package\[nagios3\]/)
+  end
+
   context "with manage_firewall == true" do
     let(:params) {{
       :manage_firewall => true
@@ -143,4 +305,15 @@ describe 'nagios::monitor' do
         .with_action('accept')
     end
   end
+
+  describe "nag_to_aug()" do
+    let(:scope) { PuppetlabsSpec::PuppetInternals.scope }
+    it "should return a hash containing 'changes' and 'onlyif' keys for cfg_file" do
+      scope.function_nag_to_aug([['cfg1', 'cfg2'], 'cfg_file', '/etc/nagios3/nagios.cfg']).should == { 'changes' => [ 'rm cfg_file', "ins cfg_file before /files/etc/nagios3/nagios.cfg/#comment[.='LOG FILE']", 'set cfg_file[1] cfg1', 'ins cfg_file after /files/etc/nagios3/nagios.cfg/cfg_file[last()]', 'set cfg_file[last()] cfg2' ], 'onlyif' => "values cfg_file != ['cfg1', 'cfg2']" }
+    end
+    it "should return a hash containing 'changes' and 'onlyif' keys for cfg_dir" do
+      scope.function_nag_to_aug([['cfg1', 'cfg2'], 'cfg_dir', '/etc/nagios3/nagios.cfg']).should == { 'changes' => [ 'rm cfg_dir', "ins cfg_dir before /files/etc/nagios3/nagios.cfg/#comment[.='LOG FILE']", 'set cfg_dir[1] cfg1', 'ins cfg_dir after /files/etc/nagios3/nagios.cfg/cfg_dir[last()]', 'set cfg_dir[last()] cfg2' ], 'onlyif' => "values cfg_dir != ['cfg1', 'cfg2']" }
+    end
+  end
+
 end
