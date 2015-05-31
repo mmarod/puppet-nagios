@@ -1,0 +1,371 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII" />
+<title>
+  File: README
+  
+    &mdash; Documentation by YARD 0.8.7.6
+  
+</title>
+
+  <link rel="stylesheet" href="css/style.css" type="text/css" charset="utf-8" />
+
+  <link rel="stylesheet" href="css/common.css" type="text/css" charset="utf-8" />
+
+<script type="text/javascript" charset="utf-8">
+  hasFrames = window.top.frames.main ? true : false;
+  relpath = '';
+  framesUrl = "frames.html#!file.README.html";
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div id="header">
+      <div id="menu">
+  
+    <a href="_index.html">Index</a> &raquo; 
+    <span class="title">File: README</span>
+  
+
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
+</div>
+
+      <div id="search">
+  
+    <a class="full_list_link" id="puppet_manifest_list_link"
+        href="puppet_manifest_list.html">
+      Puppet Manifest List
+    </a>
+  
+    <a class="full_list_link" id="puppet_plugin_list_link"
+        href="puppet_plugin_list.html">
+      Puppet Plugin List
+    </a>
+  
+    <a class="full_list_link" id="class_list_link"
+        href="class_list.html">
+      Class List
+    </a>
+  
+    <a class="full_list_link" id="method_list_link"
+        href="method_list.html">
+      Method List
+    </a>
+  
+    <a class="full_list_link" id="file_list_link"
+        href="file_list.html">
+      File List
+    </a>
+  
+</div>
+      <div class="clear"></div>
+    </div>
+
+    <iframe id="search_frame"></iframe>
+
+    <div id="content"><div id='filecontents'><h1>Nagios</h1>
+
+<p><a href="https://travis-ci.org/mmarod/puppet-nagios"><img src="https://travis-ci.org/mmarod/puppet-nagios.svg?branch=master" alt="Build Status"></a></p>
+
+<h4>Table of Contents</h4>
+
+<ol>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#module-description">Module Description - What the module does and why it is useful</a></li>
+<li><a href="#setup">Setup - The basics of getting started with Nagios</a>
+
+<ul>
+<li><a href="#what-Nagios-affects">What Nagios affects</a></li>
+<li><a href="#setup-requirements">Setup requirements</a></li>
+<li><a href="#beginning-with-Nagios">Beginning with Nagios</a></li>
+</ul></li>
+<li><a href="#usage">Usage - Configuration options and additional functionality</a></li>
+<li><a href="#reference">Reference - An under-the-hood peek at what the module is doing and how</a></li>
+<li><a href="#limitations">Limitations - OS compatibility, etc.</a></li>
+<li><a href="#development">Development - Guide for contributing to the module</a></li>
+</ol>
+
+<h2>Overview</h2>
+
+<p>The Nagios module installs and configures the Nagios service.</p>
+
+<h2>Module Description</h2>
+
+<p>This Nagios module uses rsync and/or storeconfigs to manage Nagios configurations.
+I made this module because the nagios_[type] types require you to put all of
+your configurations into large files at /etc/nagios/nagios_[type].cfg. This
+requirement makes collecting and merging a large number of stored configurations
+on the monitor a painful experience.</p>
+
+<p>My solution to this problem is to write the nagios configurations to
+nagios_[type].cfg on each node and then rsync the configurations over to the
+monitor server. This way the merging of configuration files occurs on each
+individual server in smaller jobs.</p>
+
+<h2>Setup</h2>
+
+<h3>What Nagios affects</h3>
+
+<p>This configuration requires that rsync works which means that port 873 must be
+open on the monitor server. SSH keys are automatically created and distributed
+using store configs.</p>
+
+<p>It will create a user named &#39;nagsync&#39; and also generate an SSH key for this
+user.</p>
+
+<h3>Setup requirements</h3>
+
+<h4>Puppet Requirements</h4>
+
+<ul>
+<li>Puppet-3.7.6 or later</li>
+<li>PuppetDB-2.0.0 or later</li>
+<li>Facter-2.0.0 or later</li>
+<li>Hiera-2.0.0 or later</li>
+</ul>
+
+<p>Storeconfigs must be enabled on the Puppetmaster.</p>
+
+<h4>Dependencies</h4>
+
+<ul>
+<li>puppetlabs/stdlib &gt;=4.2.0</li>
+<li>puppetlabs/rsync &gt;=0.4.0</li>
+<li>puppetlabs/firewall &gt;= 1.0.0</li>
+<li>pdxcat/nrpe &gt;=1.0.0</li>
+<li>stahnma/epel &gt;=1.0.2</li>
+</ul>
+
+<h3>Beginning with Nagios</h3>
+
+<p>This module requires a little bit of patience to get a target syncing its
+configs to a monitor.  The initial Puppet run will not magically make everything
+work, however, if you simply include the <code>nagios::target</code> class and wait it will
+eventually work.</p>
+
+<p>The monitor should be configured first. To do this, simply include the
+<code>nagios::monitor</code> class.</p>
+
+<pre class="code puppet"><code class="puppet">include '::nagios::monitor'
+</code></pre>
+
+<p>Run Puppet on the monitor server to get the initial configuration realized.</p>
+
+<p>Once the monitor has been configured, targets can be configured.</p>
+
+<pre class="code puppet"><code class="puppet">class { '::nagios::target':
+    target_host =&gt; 'nagios.example.com'
+}
+</code></pre>
+
+<p>Puppet needs to run a couple of times before configurations will actually be
+shared. Here is how it all goes down:</p>
+
+<ol>
+<li><em>Target</em>: The first Puppet run will configure a user named &#39;nagsync&#39; and
+generate an SSH key for it.  This key will be used for rsyncing configurations
+over to the monitor later on.</li>
+<li><em>Target</em>: The second Puppet run will export the key generated in the
+previous step as an export ssh_authorized_key resource.</li>
+<li><em>Monitor</em>: Once the key has been exported, it needs to be collected by the
+monitor. Run Puppet again on the monitor to collect the key.</li>
+<li><em>Target</em>: Finally, the configurations are ready to be transferred to the
+master. Run Puppet again and watch the configurations transfer over to the
+master.</li>
+</ol>
+
+<p>You do not need to manually run these steps if you do not want to. Puppet will
+figure all of this out on its own. However, if you are impatient, this is the
+order you should go in.</p>
+
+<h2>Usage</h2>
+
+<h3>Target</h3>
+
+<ul>
+<li><code>nagios_hosts</code> Creates <code>nagios_host</code> resources</li>
+<li><code>nagios_services</code> Creates <code>nagios_service</code> resources</li>
+<li><code>nrpe_commands</code> Creates <code>nrpe::command</code> resources</li>
+<li><code>nrpe_plugins</code> Creates <code>nrpe::plugin</code> resources</li>
+</ul>
+
+<pre class="code yaml"><code class="yaml">nagios_hosts:
+  '%{::clientcert}':
+    ensure: present
+    alias: '%{::hostname}'
+    address: '%{::ipaddress}'
+    use: generic-host
+    hostgroups: testhostgroup
+    icon_image: base/icon.png
+    notification_period: 24x7
+nagios_services:
+  someservice:
+    check_command: /usr/bin/testcommand
+    use: generic-service
+    host_name: '%{::clientcert}'
+    service_description: 'test command'
+    notification_period: 24x7
+</code></pre>
+
+<h3>Monitor</h3>
+
+<ul>
+<li><code>nagios_commands</code> Creates <code>nagios_command</code> resources</li>
+<li><code>nagios_contactgroups</code> Creates <code>nagios_contactgroup</code> resources</li>
+<li><code>nagios_contacts</code> Creates <code>nagios_contact</code> resources</li>
+<li><code>nagios_eventhandlers</code> Creates <code>nagios::eventhandlers</code> resources</li>
+<li><code>nagios_hostgroups</code> Creates <code>nagios_hostgroup</code> resources</li>
+<li><code>nagios_hosts</code> Creates <code>nagios_host</code> resources</li>
+<li><code>nagios_plugins</code> Creates <code>nagios::plugin</code> resources</li>
+<li><code>nagios_servicegroups</code> Creates servicegroups</li>
+<li><code>nagios_services</code> Creates <code>nagios_service</code> resources</li>
+<li><code>nagios_timeperiods</code> Creates <code>nagios_timeperiod</code> resources</li>
+</ul>
+
+<pre class="code yaml"><code class="yaml">nagios_plugins:
+  myplugin:
+    content: moo
+nagios_eventhandlers:
+  myeventhandler:
+    content: moo
+nagios_hostgroups:
+  myhostgroup: {}
+nagios_servicegroups:
+  myservicegroup: {}
+nagios_commands:
+  mycommand:
+    command_line: /usr/bin/whoami
+</code></pre>
+
+<h2>Reference</h2>
+
+<h3>Facts</h3>
+
+<h4><code>nagios_key_exists</code></h4>
+
+<p>Whether or not the Nagios key has been generated yet.</p>
+
+<h4><code>nagios_key</code></h4>
+
+<p>The SSH key for the nagsync user.</p>
+
+<h4><code>nagios_config</code></h4>
+
+<p>The Nagios configuration. This is necessary for when storeconfigs are used as
+the <code>xfer_method</code>.</p>
+
+<h3>Classes</h3>
+
+<h4>Public Classes</h4>
+
+<ul>
+<li><a href="#nagios-target">nagios::target</a>: The Nagios target class</li>
+<li><a href="#nagios-target">nagios::monitor</a>: The Nagios monitor class</li>
+</ul>
+
+<h4>Private Classes</h4>
+
+<ul>
+<li><a href="#nagios-params">nagios::params</a>: The Nagios params class</li>
+</ul>
+
+<h4>Defined Types</h4>
+
+<ul>
+<li><a href="#nagios-plugin">nagios::plugin</a>: Creates a Nagios plugin</li>
+<li><a href="#nagios-eventhandler">nagios::eventhandler</a>: Creates a Nagios event handler</li>
+</ul>
+
+<h3>Parameters</h3>
+
+<h4><code>nagios::target::target_host</code></h4>
+
+<p>The hostname, fqdn, or ip address of the Nagios monitor. This needs to
+be exactly the same as the value of monitor_host on the monitor for ssh
+key exchanging to work.</p>
+
+<h4><code>nagios::target::target_path</code></h4>
+
+<p>The path to the conf.d server on the monitor.</p>
+
+<p>Default: /etc/nagios/conf.d</p>
+
+<h4><code>nagios::target::local_user</code></h4>
+
+<p>The local user to use for rsync and Nagios config file generation.</p>
+
+<p>Default: nagios</p>
+
+<h4><code>nagios::target::remote_user</code></h4>
+
+<p>The remote user to use for rsync and Nagios config file generation.</p>
+
+<p>Default: nagios</p>
+
+<h4><code>nagios::target::use_nrpe</code></h4>
+
+<p>Deteremines whether or not to install and manage nrpe.</p>
+
+<p>Default: true</p>
+
+<h4><code>nagios::monitor::monitor_host</code></h4>
+
+<p>The hostname, fqdn, or ip address of the Nagios monitor. This needs to
+be exactly the same as the value of target_host on the targets for ssh
+key exchanging to work.</p>
+
+<p>Default: $::ipaddress</p>
+
+<h4><code>nagios::monitor::nagios_user</code></h4>
+
+<p>The Nagios user</p>
+
+<p>Default: nagios</p>
+
+<h4><code>nagios::monitor::nagios_group</code></h4>
+
+<p>The Nagios group</p>
+
+<p>Default: nagios</p>
+
+<h4><code>nagios::monitor::cfg_files</code></h4>
+
+<p><code>cfg_file</code> keys to include in nagios.cfg</p>
+
+<p>Default: [ &#39;/etc/nagios3/commands.cfg&#39; ]</p>
+
+<h4><code>nagios::monitor::cfg_dirs</code></h4>
+
+<p><code>cfg_dir</code> keys to include in nagios.cfg</p>
+
+<p>Default: [ &#39;/etc/nagios-plugins/config&#39;, &#39;/etc/nagios3/conf.d&#39; ]</p>
+
+<h4><code>nagios::monitor::config</code></h4>
+
+<p>A hash of key/value pairs to configure in nagios.cfg.</p>
+
+<p>Default: {}</p>
+
+<h4><code>nagios::monitor::manage_firewall</code></h4>
+
+<p>Whether or not to open port 873.</p>
+
+<p>Default: false</p>
+</div></div>
+
+    <div id="footer">
+  Generated on Sat May 30 22:21:23 2015 by
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.8.7.6 (ruby-1.9.3).
+</div>
+
+  </body>
+</html>

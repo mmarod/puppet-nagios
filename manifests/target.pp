@@ -19,15 +19,15 @@
 #     is_monitor  => true
 #   }
 #
-# @params target_host [String] The IP or hostname of the Nagios monitor.
+# @param target_host [String] The IP or hostname of the Nagios monitor.
 #   This value needs to be the same as the monitor_host param of the monitor for
 #   sshkey sharing to work.
-# @params target_path [String] The remote path to the Nagios conf.d directory.
-# @params prefix [String] The prefix for the configuration files on the monitor.
-# @params local_user [String] The local user to use for rsync'ing configs.
-# @params remote_user [String] The remote user on the Nagios monitor to use for rsync'ing configs.
-# @params use_nrpe [Boolean] Whether or not to configure nrpe.
-# @params is_monitor [Boolean] Whether or not this target is the Nagios monitor.
+# @param target_path [String] The remote path to the Nagios conf.d directory.
+# @param prefix [String] The prefix for the configuration files on the monitor.
+# @param local_user [String] The local user to use for rsync'ing configs.
+# @param remote_user [String] The remote user on the Nagios monitor to use for rsync'ing configs.
+# @param use_nrpe [Boolean] Whether or not to configure nrpe.
+# @param is_monitor [Boolean] Whether or not this target is the Nagios monitor.
 #
 class nagios::target(
   $target_host          = undef,

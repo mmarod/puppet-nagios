@@ -1,3 +1,5 @@
+# Params class
+#
 class nagios::params {
   case $::osfamily {
     'Debian': {

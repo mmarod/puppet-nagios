@@ -82,7 +82,7 @@ Once the monitor has been configured, targets can be configured.
 
 ```puppet
 class { '::nagios::target':
-    target_host => '192.168.10.20'
+    target_host => 'nagios.example.com'
 }
 ```
 
