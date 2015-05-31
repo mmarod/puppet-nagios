@@ -20,7 +20,6 @@
 # @param local_user [String] The local user to use for rsync'ing configs.
 # @param remote_user [String] The remote user on the Nagios monitor to use for rsync'ing configs.
 # @param use_nrpe [Boolean] Whether or not to configure nrpe.
-# @param is_monitor [Boolean] Whether or not this target is the Nagios monitor.
 # @param xfer_method [String] (rsync/storeconfig) How to transfer the Nagios config to the monitor.
 #
 class nagios::target(
