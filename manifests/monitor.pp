@@ -2,13 +2,8 @@
 #
 # @example Standard configuration
 #   include '::nagios::monitor'
-#   class { '::nagios::target':
-#     is_monitor  => true
-#   }
 #
 # @param monitor_host [String] The domain name or IP address of the monitor.
-# @param file_base [String] The prefix to the name on the Nagios configs.
-# @param packages [Array] A list of packages to install.
 # @param nagios_user [String] The nagios user.
 # @param nagios_group [String] The nagios group.
 # @param cfg_files [Array] A list of cfg_files to include.
@@ -17,9 +12,7 @@
 # @param manage_firewall [Boolean] Whether or not to open port 873 for rsync.
 #
 class nagios::monitor(
-  $monitor_host        = $::ipaddress,
-  $filebase            = $::clientcert,
-  $packages            = $nagios::params::packages,
+  $monitor_host        = $::clientcert,
   $nagios_user         = $nagios::params::nagios_user,
   $nagios_group        = $nagios::params::nagios_group,
   $cfg_files           = $nagios::params::cfg_files,
@@ -28,18 +21,17 @@ class nagios::monitor(
   $manage_firewall     = false,
 ) inherits nagios::params {
   validate_string($monitor_host)
-  validate_string($filebase)
-  validate_array($packages)
   validate_string($nagios_user)
   validate_string($nagios_group)
   validate_array($cfg_files)
   validate_array($cfg_dirs)
+  validate_hash($config)
   validate_bool($manage_firewall)
 
-  $filebase_escaped = regsubst($filebase, '\.', '_', 'G')
+  $filebase_escaped = regsubst($nagios::params::filebase, '\.', '_', 'G')
   $config_file = "${nagios::params::confdir_hosts}/${filebase_escaped}.cfg"
 
-  ensure_packages($packages)
+  ensure_packages($nagios::params::packages)
 
   service { $nagios::params::nagios_service_name:
     ensure  => running,
@@ -98,7 +90,7 @@ class nagios::monitor(
   file { $nagios::params::confdir:
     ensure  => directory,
     owner   => $nagios_user,
-    require => Package[$packages]
+    require => Package[$nagios::params::packages]
   } ->
 
   file { $nagios::params::confdir_hosts:
@@ -302,7 +294,7 @@ class nagios::monitor(
 
   rsync::server::module { 'nagios':
     path    => $nagios::params::confdir_hosts,
-    require => Package[$packages]
+    require => Package[$nagios::params::packages]
   }
 
   if $manage_firewall {

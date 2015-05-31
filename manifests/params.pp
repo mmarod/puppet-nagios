@@ -61,4 +61,5 @@ class nagios::params {
   $eventhandler_mode  = '0755'
   $nagios_user        = 'nagios'
   $nagios_group       = 'nagios'
+  $filebase           = $::clientcert
 }

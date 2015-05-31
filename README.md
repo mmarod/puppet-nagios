@@ -1,5 +1,7 @@
 # Nagios
 
+[![Build Status](https://travis-ci.org/mmarod/puppet-nagios.svg?branch=master)](https://travis-ci.org/mmarod/puppet-nagios)
+
 #### Table of Contents
 
 1. [Overview](#overview)
@@ -19,7 +21,7 @@ The Nagios module installs and configures the Nagios service.
 
 ## Module Description
 
-This Nagios module uses rsync and storeconfigs to manage Nagios configurations.
+This Nagios module uses rsync and/or storeconfigs to manage Nagios configurations.
 I made this module because the nagios_[type] types require you to put all of
 your configurations into large files at /etc/nagios/nagios_[type].cfg. This
 requirement makes collecting and merging a large number of stored configurations
@@ -45,7 +47,7 @@ user.
 
 #### Puppet Requirements
 
-* Puppet-3.0.0 or later
+* Puppet-3.7.6 or later
 * PuppetDB-2.0.0 or later
 * Facter-2.0.0 or later
 * Hiera-2.0.0 or later
@@ -68,14 +70,10 @@ work, however, if you simply include the `nagios::target` class and wait it will
 eventually work.
 
 The monitor should be configured first. To do this, simply include the
-`nagios::monitor` class and optionally also include the `nagios::target` class
-with `is_monitor` set to true if you want the monitor server to monitor itself..
+`nagios::monitor` class.
 
 ```puppet
 include '::nagios::monitor'
-class { '::nagios::target':
-  is_monitor  => true
-}
 ```
 
 Run Puppet on the monitor server to get the initial configuration realized.
@@ -110,10 +108,10 @@ order you should go in.
 
 ### Target
 
-* The Hiera key `nagios_services` creates target specific services
-* The Hiera key `nagios_hosts` creates target specific hosts
-* The Hiera key `nrpe_commands` creates NRPE commands
-* The Hiera key `nrpe_plugins` creates NRPE plugins
+* `nagios_hosts` Creates `nagios_host` resources
+* `nagios_services` Creates `nagios_service` resources
+* `nrpe_commands` Creates `nrpe::command` resources
+* `nrpe_plugins` Creates `nrpe::plugin` resources
 
 ```yaml
 nagios_hosts:
@@ -126,7 +124,7 @@ nagios_hosts:
     icon_image: base/icon.png
     notification_period: 24x7
 nagios_services:
-  testservice:
+  someservice:
     check_command: /usr/bin/testcommand
     use: generic-service
     host_name: '%{::clientcert}'
@@ -134,30 +132,31 @@ nagios_services:
     notification_period: 24x7
 ```
 
-If you plan on  monitoring your monitor, you will need to include the nagios::target
-class on the monitor. Set `nagios::target::is_monitor` to true to manage those
-configurations.
-
 ### Monitor
 
-* `nagios::monitor::hostgroups` Creates hostgroups
-* `nagios::monitor::servicegroups` Creates servicegroups
-* `nagios::monitor::commands` Creates commands
-* `nagios::monitor::plugins` Creates plugins
-* `nagios::monitor::eventhandlers` Creates eventhandlers
+* `nagios_commands` Creates `nagios_command` resources
+* `nagios_contactgroups` Creates `nagios_contactgroup` resources
+* `nagios_contacts` Creates `nagios_contact` resources
+* `nagios_eventhandlers` Creates `nagios::eventhandlers` resources
+* `nagios_hostgroups` Creates `nagios_hostgroup` resources
+* `nagios_hosts` Creates `nagios_host` resources
+* `nagios_plugins` Creates `nagios::plugin` resources
+* `nagios_servicegroups` Creates servicegroups
+* `nagios_services` Creates `nagios_service` resources
+* `nagios_timeperiods` Creates `nagios_timeperiod` resources
 
 ```yaml
-nagios::monitor::plugins:
+nagios_plugins:
   myplugin:
     content: moo
-nagios::monitor::eventhandlers:
+nagios_eventhandlers:
   myeventhandler:
     content: moo
-nagios::monitor::hostgroups:
+nagios_hostgroups:
   myhostgroup: {}
-nagios::monitor::servicegroups:
+nagios_servicegroups:
   myservicegroup: {}
-nagios::monitor::commands:
+nagios_commands:
   mycommand:
     command_line: /usr/bin/whoami
 ```
@@ -166,13 +165,18 @@ nagios::monitor::commands:
 
 ### Facts
 
-#### nagios_key_exists
+#### `nagios_key_exists`
 
 Whether or not the Nagios key has been generated yet.
 
-#### nagios_key
+#### `nagios_key`
 
 The SSH key for the nagsync user.
+
+#### `nagios_config`
+
+The Nagios configuration. This is necessary for when storeconfigs are used as
+the `xfer_method`.
 
 ### Classes
 
@@ -180,6 +184,10 @@ The SSH key for the nagsync user.
 
 * [nagios::target](#nagios-target): The Nagios target class
 * [nagios::monitor](#nagios-target): The Nagios monitor class
+
+#### Private Classes
+
+* [nagios::params](#nagios-params): The Nagios params class
 
 #### Defined Types
 
@@ -200,13 +208,6 @@ The path to the conf.d server on the monitor.
 
 Default: /etc/nagios/conf.d
 
-#### `nagios::target::prefix`
-
-The name of the prefix for the configuration files that will show up on the
-monitor.
-
-Default: $::clientcert
-
 #### `nagios::target::local_user`
 
 The local user to use for rsync and Nagios config file generation.
@@ -225,12 +226,6 @@ Deteremines whether or not to install and manage nrpe.
 
 Default: true
 
-#### `nagios::target::is_monitor`
-
-Determines whether or not this target is also the monitor.
-
-Default: false
-
 #### `nagios::monitor::monitor_host`
 
 The hostname, fqdn, or ip address of the Nagios monitor. This needs to
@@ -238,12 +233,6 @@ be exactly the same as the value of target_host on the targets for ssh
 key exchanging to work.
 
 Default: $::ipaddress
-
-#### `nagios::monitor::packages`
-
-The Nagios packages
-
-Default: [ 'nagios3', 'nagios-plugins' ]
 
 #### `nagios::monitor::nagios_user`
 
@@ -257,57 +246,21 @@ The Nagios group
 
 Default: nagios
 
-#### `nagios::monitor::plugin_mode`
+#### `nagios::monitor::cfg_files`
 
-The mode to give plugins
+`cfg_file` keys to include in nagios.cfg
 
-Default: 0755
+Default: [ '/etc/nagios3/commands.cfg' ]
 
-#### `nagios::monitor::eventhandler_mode`
+#### `nagios::monitor::cfg_dirs`
 
-The mode to give eventhandlers
+`cfg_dir` keys to include in nagios.cfg
 
-Default: 0755
+Default: [ '/etc/nagios-plugins/config', '/etc/nagios3/conf.d' ]
 
-#### `nagios::monitor::plugins`
+#### `nagios::monitor::config`
 
-A hash of nagios::plugin resources.
-
-Default: {}
-
-#### `nagios::monitor::plugin_path`
-
-The path to the Nagios plugins
-
-Default: /etc/nagios-plugins/config
-
-#### `nagios::monitor::eventhandlers`
-
-A hash of nagios::eventhandler resources.
-
-Default: {}
-
-#### `nagios::monitor::plugin_path`
-
-The path to the Nagios plugins
-
-Default: /usr/share/nagios3/plugins/eventhandlers
-
-#### `nagios::monitor::hostgroups`
-
-A hash of nagios_hostgroups.
-
-Default: {}
-
-#### `nagios::monitor::servicegroups`
-
-A hash of nagios_servicegroups.
-
-Default: {}
-
-#### `nagios::monitor::commands`
-
-A hash of nagios_commands.
+A hash of key/value pairs to configure in nagios.cfg.
 
 Default: {}
 

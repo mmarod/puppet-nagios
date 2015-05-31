@@ -32,16 +32,19 @@
 class nagios::target(
   $target_host          = undef,
   $target_path          = '/etc/nagios3/conf.d/hosts',
-  $filebase             = $::clientcert,
   $local_user           = 'nagsync',
   $remote_user          = 'nagios',
   $use_nrpe             = true,
   $xfer_method          = $nagios::params::xfer_method,
 ) inherits nagios::params {
+  if $xfer_method == 'rsync' {
+    validate_string($target_host)
+  }
   validate_absolute_path($target_path)
   validate_string($local_user)
   validate_string($remote_user)
   validate_bool($use_nrpe)
+  validate_string($xfer_method)
 
   Nagios_host<||> -> Rsync::Put<||>
   Nagios_service<||> -> Rsync::Put<||>
@@ -55,7 +58,7 @@ class nagios::target(
     require => User[$local_user]
   } -> Nagios_host <||> -> Nagios_service <||>
 
-  $filebase_escaped   = regsubst($filebase, '\.', '_', 'G')
+  $filebase_escaped   = regsubst($nagios::params::filebase, '\.', '_', 'G')
   $config_file        = "${nagios::params::naginator_confdir}/nagios_config.cfg"
 
   $create_defaults = { 'ensure' => 'present' }
@@ -67,8 +70,6 @@ class nagios::target(
   # Create resources from Hiera data
   create_resources('nagios_host',     $hosts,    $create_defaults)
   create_resources('nagios_service',  $services, $create_defaults)
-
-  validate_string($target_host)
 
   # Send our config filename to the monitor so our configuration is not purged.
   @@concat_fragment { "nagios_target_${filebase_escaped}":

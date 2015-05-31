@@ -2,24 +2,20 @@
   "name": "mmarod-nagios",
   "version": "0.0.1",
   "author": "Michael Marod",
-  "summary": "Puppet nagios module",
   "license": "Apache-2.0",
+  "summary": "Puppet nagios module",
   "source": "https://github.com/mmarod/puppet-nagios.git",
   "project_page": "http://github.com/mmarod/puppet-nagios",
   "issues_url": "https://github.com/mmarod/puppet-nagios/issues",
   "dependencies": [
-    {"name":"puppetlabs/stdlib","version_requirement":">= 4.2.0"},
+    {"name":"puppetlabs/stdlib","version_requirement":"4.x"},
     {"name":"puppetlabs/rsync","version_requirement":">=0.4.0"},
-    {"name":"puppetlabs/concat","version_requirement":">=2.0.0"}
+    {"name":"puppetlabs/concat","version_requirement":"2.x"}
   ],
   "requirements": [
     {
-      "name": "pe",
-      "version_requirement": "3.x"
-    },
-    {
       "name": "puppet",
-      "version_requirement": "3.x"
+      "version_requirement": ">=3.7.5"
     }
   ],
   "operatingsystem_support": [
@@ -27,23 +23,17 @@
       "operatingsystem": "Debian",
       "operatingsystemrelease":[
         "6",
-        "7"
+        "7",
+        "8"
       ]
     },
     {
-      "operatingsystem": "OpenBSD"
-    },
-    {
-      "operatingsystem": "RedHat"
-    },
-    {
-      "operatingsystem": "SLES"
-    },
-    {
-      "operatingsystem": "Solaris"
-    },
-    {
-      "operatingsystem": "Ubuntu"
+      "operatingsystem": "RedHat",
+      "operatingsystemrelease":[
+        "5",
+        "6",
+        "7"
+      ]
     }
   ]
 }
