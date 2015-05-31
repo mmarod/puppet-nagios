@@ -126,12 +126,6 @@ transferred to the monitor under /etc/nagios3/conf.d/*.</p>
   target_host    => 'nagios.example.com'
 }</span></code></pre>
     
-      <div class="inline"><p>A node that is also the Nagios monitor</p></div>
-      <pre class="example code"><code><span>include '::nagios::monitor'
-class { '::nagios::target':
-  is_monitor  => true
-}</span></code></pre>
-    
     </div>
   
   
@@ -142,13 +136,13 @@ class { '::nagios::target':
   <ul class="param">
     <li><span class="name">target_host </span><span class="type">(<tt>String</tt>)</span><tt> => undef</tt>- <div class="inline"><p> The IP or hostname of the Nagios monitor.
 This value needs to be the same as the monitor_host param of the monitor for
-sshkey sharing to work. </p></div></li><li><span class="name">target_path </span><span class="type">(<tt>String</tt>)</span><tt> => '/etc/nagios3/conf.d/hosts'</tt>- <div class="inline"><p> The remote path to the Nagios conf.d directory. </p></div></li><li><span class="name">local_user </span><span class="type">(<tt>String</tt>)</span><tt> => 'nagsync'</tt>- <div class="inline"><p> The local user to use for rsync'ing configs. </p></div></li><li><span class="name">remote_user </span><span class="type">(<tt>String</tt>)</span><tt> => 'nagios'</tt>- <div class="inline"><p> The remote user on the Nagios monitor to use for rsync'ing configs. </p></div></li><li><span class="name">use_nrpe </span><span class="type">(<tt>Boolean</tt>)</span><tt> => true</tt>- <div class="inline"><p> Whether or not to configure nrpe. </p></div></li><li><span class="name">xfer_method </span><span class="type">(<tt>TBD</tt>)</span><tt> => $nagios::params::xfer_method</tt></li><li><strike><span class="name">prefix </span><span class="type">(<tt>String</tt>)</span>- <div class="inline"><p> The prefix for the configuration files on the monitor. </p></div></strike></li><li><strike><span class="name">is_monitor </span><span class="type">(<tt>Boolean</tt>)</span>- <div class="inline"><p> Whether or not this target is the Nagios monitor. </p></div></strike></li>
+sshkey sharing to work. </p></div></li><li><span class="name">target_path </span><span class="type">(<tt>String</tt>)</span><tt> => '/etc/nagios3/conf.d/hosts'</tt>- <div class="inline"><p> The remote path to the Nagios conf.d directory. </p></div></li><li><span class="name">local_user </span><span class="type">(<tt>String</tt>)</span><tt> => 'nagsync'</tt>- <div class="inline"><p> The local user to use for rsync'ing configs. </p></div></li><li><span class="name">remote_user </span><span class="type">(<tt>String</tt>)</span><tt> => 'nagios'</tt>- <div class="inline"><p> The remote user on the Nagios monitor to use for rsync'ing configs. </p></div></li><li><span class="name">use_nrpe </span><span class="type">(<tt>Boolean</tt>)</span><tt> => true</tt>- <div class="inline"><p> Whether or not to configure nrpe. </p></div></li><li><span class="name">xfer_method </span><span class="type">(<tt>String</tt>)</span><tt> => $nagios::params::xfer_method</tt>- <div class="inline"><p> (rsync/storeconfig) How to transfer the Nagios config to the monitor. </p></div></li><li><strike><span class="name">is_monitor </span><span class="type">(<tt>Boolean</tt>)</span>- <div class="inline"><p> Whether or not this target is the Nagios monitor. </p></div></strike></li>
   </ul>
 </div>
 </div>
 
     <div id="footer">
-  Generated on Sat May 30 22:21:23 2015 by
+  Generated on Sat May 30 22:29:58 2015 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.8.7.6 (ruby-1.9.3).
 </div>

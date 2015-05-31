@@ -13,21 +13,15 @@
 #     target_host    => 'nagios.example.com'
 #   }
 #
-# @example A node that is also the Nagios monitor
-#   include '::nagios::monitor'
-#   class { '::nagios::target':
-#     is_monitor  => true
-#   }
-#
 # @param target_host [String] The IP or hostname of the Nagios monitor.
 #   This value needs to be the same as the monitor_host param of the monitor for
 #   sshkey sharing to work.
 # @param target_path [String] The remote path to the Nagios conf.d directory.
-# @param prefix [String] The prefix for the configuration files on the monitor.
 # @param local_user [String] The local user to use for rsync'ing configs.
 # @param remote_user [String] The remote user on the Nagios monitor to use for rsync'ing configs.
 # @param use_nrpe [Boolean] Whether or not to configure nrpe.
 # @param is_monitor [Boolean] Whether or not this target is the Nagios monitor.
+# @param xfer_method [String] (rsync/storeconfig) How to transfer the Nagios config to the monitor.
 #
 class nagios::target(
   $target_host          = undef,
