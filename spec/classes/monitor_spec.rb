@@ -446,6 +446,12 @@ describe 'nagios::monitor' do
     it "should return a hash containing 'changes' and 'onlyif' keys for cfg_dir" do
       scope.function_nag_to_aug([['cfg1', 'cfg2'], 'cfg_dir', '/etc/nagios3/nagios.cfg']).should == { 'changes' => [ 'rm cfg_dir', "ins cfg_dir before /files/etc/nagios3/nagios.cfg/#comment[.='LOG FILE']", 'set cfg_dir[1] cfg1', 'ins cfg_dir after /files/etc/nagios3/nagios.cfg/cfg_dir[last()]', 'set cfg_dir[last()] cfg2' ], 'onlyif' => "values cfg_dir != ['cfg1', 'cfg2']" }
     end
+    it "should return a hash containing 'changes' and 'onlyif' keys when an empty value set is supplied to cfg_file" do
+      scope.function_nag_to_aug([[], 'cfg_file', '/etc/nagios3/nagios.cfg']).should == { 'changes' => [ 'rm cfg_file' ], 'onlyif' => "match cfg_file size > 0" }
+    end
+    it "should return a hash containing 'changes' and 'onlyif' keys with an empty value set is supplied to cfg_dir" do
+      scope.function_nag_to_aug([[], 'cfg_dir', '/etc/nagios3/nagios.cfg']).should == { 'changes' => [ 'rm cfg_dir' ], 'onlyif' => "match cfg_dir size > 0" }
+    end
   end
 
 end
