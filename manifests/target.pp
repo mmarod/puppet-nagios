@@ -13,31 +13,15 @@
 #     target_host    => 'nagios.example.com'
 #   }
 #
-# @param target_host [String] The IP or hostname of the Nagios monitor.
-#   This value needs to be the same as the monitor_host param of the monitor for
-#   sshkey sharing to work.
-# @param target_path [String] The remote path to the Nagios conf.d directory.
-# @param local_user [String] The local user to use for rsync'ing configs.
-# @param remote_user [String] The remote user on the Nagios monitor to use for rsync'ing configs.
-# @param use_nrpe [Boolean] Whether or not to configure nrpe.
-# @param xfer_method [String] (rsync/storeconfig) How to transfer the Nagios config to the monitor.
-#
-class nagios::target(
-  $target_host          = $nagios::config::monitor_host,
-  $target_path          = $nagios::config::target_path,
-  $remote_user          = $nagios::config::nagios_user,
-  $local_user           = 'nagsync',
-  $use_nrpe             = true,
-  $xfer_method          = $nagios::params::xfer_method,
-) inherits nagios::params {
-  if $xfer_method == 'rsync' {
-    validate_string($target_host)
-  }
-  validate_absolute_path($target_path)
-  validate_string($local_user)
-  validate_string($remote_user)
-  validate_bool($use_nrpe)
-  validate_string($xfer_method)
+class nagios::target() inherits nagios::params {
+  include nagios::config
+
+  $target_host = $nagios::config::target_host
+  $target_path = $nagios::config::target_path
+  $remote_user = $nagios::config::nagios_user
+  $local_user  = $nagios::config::local_user
+  $use_nrpe    = $nagios::config::use_nrpe
+  $xfer_method = $nagios::config::xfer_method,
 
   Nagios_host<||> -> Rsync::Put<||>
   Nagios_service<||> -> Rsync::Put<||>

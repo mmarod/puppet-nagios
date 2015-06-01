@@ -10,33 +10,17 @@
 #   nagios::config::monitor_host: nagios.example.com
 #   nagios::config::target_path: /etc/nagios/conf.d/hosts
 #
-# @param monitor_host [String] The domain name or IP address of the monitor.
-# @param target_path [String] The path where host configurations will be stored.
-# @param nagios_user [String] The nagios user.
-# @param nagios_group [String] The nagios group.
-# @param cfg_files [Array] A list of cfg_files to include.
-# @param cfg_dirs [Array] A list of cfg_dirs to include.
-# @param config [Hash] A hash of key/value pairs to set options with in nagios.cfg.
-# @param manage_firewall [Boolean] Whether or not to open port 873 for rsync.
-#
-class nagios::monitor(
-  $monitor_host        = $nagios::config::monitor_host,
-  $target_path         = $nagios::config::target_path,
-  $nagios_user         = $nagios::config::nagios_user,
-  $nagios_group        = $nagios::config::nagios_group,
-  $cfg_files           = $nagios::params::cfg_files,
-  $cfg_dirs            = $nagios::params::cfg_dirs,
-  $config              = {},
-  $manage_firewall     = false,
-) inherits nagios::params {
-  validate_string($monitor_host)
-  validate_absolute_path($target_path)
-  validate_string($nagios_user)
-  validate_string($nagios_group)
-  validate_array($cfg_files)
-  validate_array($cfg_dirs)
-  validate_hash($config)
-  validate_bool($manage_firewall)
+class nagios::monitor() inherits nagios::params {
+  include nagios::config
+
+  $monitor_host        = $nagios::config::monitor_host
+  $target_path         = $nagios::config::target_path
+  $nagios_user         = $nagios::config::nagios_user
+  $nagios_group        = $nagios::config::nagios_group
+  $cfg_files           = $nagios::config::cfg_files
+  $cfg_dirs            = $nagios::config::cfg_dirs
+  $config              = $nagios::config::config
+  $manage_firewall     = $nagios::config::manage_firewall
 
   $filebase_escaped = regsubst($nagios::params::filebase, '\.', '_', 'G')
   $config_file = "${target_path}/${filebase_escaped}.cfg"
