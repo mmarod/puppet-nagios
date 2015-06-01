@@ -1,20 +1,4 @@
 ---
-nagios_hosts:
-  testhost:
-    ensure: present
-    alias: '%{::hostname}'
-    address: '%{::ipaddress}'
-    use: generic-host
-    hostgroups: testhostgroup
-    icon_image: base/icon.png
-    notification_period: 24x7
-nagios_services:
-  testservice:
-    check_command: /usr/bin/testcommand
-    use: generic-service
-    host_name: '%{::clientcert}'
-    service_description: 'test command'
-    notification_period: 24x7
 nagios_plugins:
   testplugin:
     content: moo
@@ -25,15 +9,8 @@ nagios_hostgroups:
   testhostgroup: {}
 nagios_servicegroups:
   testservicegroup: {}
-nagios_commands:
-  testcommand:
-    command_line: /usr/bin/whoami
 nagios_contacts:
   testcontact: {}
-nagios_contactgroups:
-  testcontactgroup: {}
-nagios_timeperiods:
-  testtimeperiod: {}
 nagios::monitor::cfg_files:
   - /etc/nagios3/some.cfg
   - /etc/nagios3/someother.cfg
@@ -47,3 +24,59 @@ nrpe_plugins:
 nrpe_commands:
   testnrpecommand:
     command: moo
+nagios_contactgroups:
+  testcontactgroup: {}
+  admins:
+    ensure: present
+    alias: overridden
+nagios_timeperiods:
+  testtimeperiod: {}
+  '24x7':
+    ensure: present
+    alias: overridden
+  'workhours':
+    ensure: present
+    alias: overridden
+  'nonworkhours':
+    ensure: present
+    alias: overridden
+  'never':
+    ensure: present
+    alias: overridden
+nagios_hosts:
+  testhost:
+    ensure: present
+    alias: '%{::hostname}'
+    address: '%{::ipaddress}'
+    use: generic-host
+    hostgroups: testhostgroup
+    icon_image: base/icon.png
+    notification_period: 24x7
+  'generic-host':
+    ensure: present
+    check_command: overridden
+nagios_services:
+  testservice:
+    check_command: /usr/bin/testcommand
+    use: generic-service
+    host_name: '%{::clientcert}'
+    service_description: 'test command'
+    notification_period: 24x7
+  'generic-service':
+    ensure: present
+    contact_groups: overridden
+nagios_commands:
+  testcommand:
+    command_line: /usr/bin/whoami
+  'notify-host-by-email':
+    ensure: present
+    command_line: overridden
+  'notify-service-by-email':
+    ensure: present
+    command_line: overridden
+  'process-host-perfdata':
+    ensure: present
+    command_line: overridden
+  'process-service-perfdata':
+    ensure: present
+    command_line: overridden

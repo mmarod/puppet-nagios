@@ -31,6 +31,60 @@ describe 'nagios::monitor' do
   end
 
   it do
+    should contain_file('/etc/nagios3/commands.cfg') \
+      .with_ensure('absent') \
+      .with_notify('Service[nagios3]')
+  end
+
+  it do
+    should contain_file('/etc/nagios3/conf.d/contacts_nagios2.cfg') \
+      .with_ensure('absent') \
+      .with_notify('Service[nagios3]')
+  end
+
+  it do
+    should contain_file('/etc/nagios3/conf.d/extinfo_nagios2.cfg') \
+      .with_ensure('absent') \
+      .with_notify('Service[nagios3]')
+  end
+
+  it do
+    should contain_file('/etc/nagios3/conf.d/generic-host_nagios2.cfg') \
+      .with_ensure('absent') \
+      .with_notify('Service[nagios3]')
+  end
+
+  it do
+    should contain_file('/etc/nagios3/conf.d/generic-service_nagios2.cfg') \
+      .with_ensure('absent') \
+      .with_notify('Service[nagios3]')
+  end
+
+  it do
+    should contain_file('/etc/nagios3/conf.d/hostgroups_nagios2.cfg') \
+      .with_ensure('absent') \
+      .with_notify('Service[nagios3]')
+  end
+
+  it do
+    should contain_file('/etc/nagios3/conf.d/localhost_nagios2.cfg') \
+      .with_ensure('absent') \
+      .with_notify('Service[nagios3]')
+  end
+
+  it do
+    should contain_file('/etc/nagios3/conf.d/services_nagios2.cfg') \
+      .with_ensure('absent') \
+      .with_notify('Service[nagios3]')
+  end
+
+  it do
+    should contain_file('/etc/nagios3/conf.d/timeperiods_nagios2.cfg') \
+      .with_ensure('absent') \
+      .with_notify('Service[nagios3]')
+  end
+
+  it do
     should contain_file('/etc/init.d/inotify-nagios') \
       .with_ensure('present') \
       .with_mode('0755') \
@@ -147,9 +201,12 @@ describe 'nagios::monitor' do
       .with_mode('0644') \
       .with_notify('Service[nagios3]') \
       .with_before(/Concat\[\/etc\/nagios3\/conf.d\/hosts\/foo_example_com.cfg\]/) \
-      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contacts_puppet.cfg\]/) \
-      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contactgroups_puppet.cfg\]/) \
-      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/timeperiods_puppet.cfg\]/)
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/commands.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contacts.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/hostgroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/servicegroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contactgroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/timeperiods.cfg\]/)
   end
 
   it do
@@ -221,68 +278,86 @@ describe 'nagios::monitor' do
   end
 
   it do
-    should contain_concat__fragment('nagios-hostgroup-config') \
+    should contain_concat__fragment('nagios-service-config') \
       .with_target('/etc/nagios3/conf.d/hosts/foo_example_com.cfg') \
-      .with_source('/etc/nagios/nagios_hostgroup.cfg') \
+      .with_source('/etc/nagios/nagios_service.cfg') \
       .with_order('02')
   end
 
   it do
-    should contain_concat__fragment('nagios-service-config') \
-      .with_target('/etc/nagios3/conf.d/hosts/foo_example_com.cfg') \
-      .with_source('/etc/nagios/nagios_service.cfg') \
-      .with_order('03')
+    should contain_concat('/etc/nagios3/conf.d/hostgroups.cfg') \
+      .with_owner('nagios') \
+      .with_mode('0644')
+  end
+
+  it do
+    should contain_concat__fragment('nagios-hostgroup-config') \
+      .with_target('/etc/nagios3/conf.d/hostgroups.cfg') \
+      .with_source('/etc/nagios/nagios_hostgroup.cfg') \
+      .with_order('01')
+  end
+
+  it do
+    should contain_concat('/etc/nagios3/conf.d/servicegroups.cfg') \
+      .with_owner('nagios') \
+      .with_mode('0644')
   end
 
   it do
     should contain_concat__fragment('nagios-servicegroup-config') \
-      .with_target('/etc/nagios3/conf.d/hosts/foo_example_com.cfg') \
+      .with_target('/etc/nagios3/conf.d/servicegroups.cfg') \
       .with_source('/etc/nagios/nagios_servicegroup.cfg') \
-      .with_order('04')
+      .with_order('01')
+  end
+
+  it do
+    should contain_concat('/etc/nagios3/conf.d/commands.cfg') \
+      .with_owner('nagios') \
+      .with_mode('0644')
   end
 
   it do
     should contain_concat__fragment('nagios-command-config') \
-      .with_target('/etc/nagios3/conf.d/hosts/foo_example_com.cfg') \
+      .with_target('/etc/nagios3/conf.d/commands.cfg') \
       .with_source('/etc/nagios/nagios_command.cfg') \
-      .with_order('05')
+      .with_order('01')
   end
 
   it do
-    should contain_concat('/etc/nagios3/conf.d/contacts_puppet.cfg') \
+    should contain_concat('/etc/nagios3/conf.d/contacts.cfg') \
       .with_owner('nagios') \
       .with_mode('0644')
   end
 
   it do
     should contain_concat__fragment('nagios-contact-config') \
-      .with_target('/etc/nagios3/conf.d/contacts_puppet.cfg') \
+      .with_target('/etc/nagios3/conf.d/contacts.cfg') \
       .with_source('/etc/nagios/nagios_contact.cfg') \
       .with_order('01')
   end
 
   it do
-    should contain_concat('/etc/nagios3/conf.d/contactgroups_puppet.cfg') \
+    should contain_concat('/etc/nagios3/conf.d/contactgroups.cfg') \
       .with_owner('nagios') \
       .with_mode('0644')
   end
 
   it do
     should contain_concat__fragment('nagios-contactgroup-config') \
-      .with_target('/etc/nagios3/conf.d/contactgroups_puppet.cfg') \
+      .with_target('/etc/nagios3/conf.d/contactgroups.cfg') \
       .with_source('/etc/nagios/nagios_contactgroup.cfg') \
       .with_order('01')
   end
 
   it do
-    should contain_concat('/etc/nagios3/conf.d/timeperiods_puppet.cfg') \
+    should contain_concat('/etc/nagios3/conf.d/timeperiods.cfg') \
       .with_owner('nagios') \
       .with_mode('0644')
   end
 
   it do
     should contain_concat__fragment('nagios-timeperiod-config') \
-      .with_target('/etc/nagios3/conf.d/timeperiods_puppet.cfg') \
+      .with_target('/etc/nagios3/conf.d/timeperiods.cfg') \
       .with_source('/etc/nagios/nagios_timeperiod.cfg') \
       .with_order('01')
   end

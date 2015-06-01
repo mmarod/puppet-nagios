@@ -22,20 +22,22 @@ module Puppet::Parser::Functions
 
     path = "/files#{filename}/#{type}"
     comment_path = "/files#{filename}/#comment"
-    onlyif  = []
 
-    match = "['" + values.join("', '") + "']"
-    onlyif = "values #{type} != #{match}"
-
-    first = values.shift
     changes = []
     changes.push("rm #{type}")
-    changes.push("ins #{type} before #{comment_path}[.='LOG FILE']") 
-    changes.push("set #{type}[1] #{first}")
+    if values.length > 0
+      match = "['" + values.join("', '") + "']"
+      onlyif = "values #{type} != #{match}"
+      first = values.shift
+      changes.push("ins #{type} before #{comment_path}[.='LOG FILE']") 
+      changes.push("set #{type}[1] #{first}")
 
-    values.each do |val|
-      changes.push("ins #{type} after #{path}[last()]")
-      changes.push("set #{type}[last()] #{val}")
+      values.each do |val|
+        changes.push("ins #{type} after #{path}[last()]")
+        changes.push("set #{type}[last()] #{val}")
+      end
+    else
+      onlyif = "match #{type} size > 0"
     end
 
     return { "changes" => changes, "onlyif" => onlyif }

@@ -17,13 +17,25 @@ class nagios::params {
       $inotify_default      = '/etc/default/inotify-nagios'
       $inotify_service_name = 'inotify-nagios'
       $nagios_service_name  = 'nagios3'
-      $cfg_files            = [ '/etc/nagios3/commands.cfg' ]
+      $cfg_files            = []
       $cfg_dirs             = [ '/etc/nagios-plugins/config', '/etc/nagios3/conf.d' ]
       $packages             = [ 'nagios3', 'nagios-plugins', 'screen', 'inotify-tools' ]
-      $config_contact       = '/etc/nagios3/conf.d/contacts_puppet.cfg'
-      $config_contactgroup  = '/etc/nagios3/conf.d/contactgroups_puppet.cfg'
-      $config_timeperiod    = '/etc/nagios3/conf.d/timeperiods_puppet.cfg'
+      $config_command       = '/etc/nagios3/conf.d/commands.cfg'
+      $config_servicegroup  = '/etc/nagios3/conf.d/servicegroups.cfg'
+      $config_hostgroup     = '/etc/nagios3/conf.d/hostgroups.cfg'
+      $config_contact       = '/etc/nagios3/conf.d/contacts.cfg'
+      $config_contactgroup  = '/etc/nagios3/conf.d/contactgroups.cfg'
+      $config_timeperiod    = '/etc/nagios3/conf.d/timeperiods.cfg'
       $xfer_method          = 'rsync'
+      $files_to_purge       = [ '/etc/nagios3/commands.cfg',
+                                '/etc/nagios3/conf.d/contacts_nagios2.cfg',
+                                '/etc/nagios3/conf.d/extinfo_nagios2.cfg',
+                                '/etc/nagios3/conf.d/generic-host_nagios2.cfg',
+                                '/etc/nagios3/conf.d/generic-service_nagios2.cfg',
+                                '/etc/nagios3/conf.d/hostgroups_nagios2.cfg',
+                                '/etc/nagios3/conf.d/localhost_nagios2.cfg',
+                                '/etc/nagios3/conf.d/services_nagios2.cfg',
+                                '/etc/nagios3/conf.d/timeperiods_nagios2.cfg' ]
     }
     'RedHat': {
       $plugin_path         = $::architecture ? {
@@ -45,13 +57,25 @@ class nagios::params {
       $inotify_source       = 'puppet:///modules/nagios/inotify-nagios.REDHAT.erb'
       $inotify_service_name = 'inotify-nagios'
       $nagios_service_name  = 'nagios'
-      $cfg_files            = [ '/etc/nagios/commands.cfg' ]
+      $cfg_files            = []
       $cfg_dirs             = [ '/etc/nagios-plugins/config', '/etc/nagios/conf.d' ]
       $packages             = [ 'nagios', 'nagios-plugins', 'screen', 'inotify-tools' ]
-      $config_contact       = '/etc/nagios/conf.d/contacts_puppet.cfg'
-      $config_contactgroup  = '/etc/nagios/conf.d/contactgroups_puppet.cfg'
-      $config_timeperiod    = '/etc/nagios/conf.d/timeperiods_puppet.cfg'
+      $config_command       = '/etc/nagios/conf.d/commands.cfg'
+      $config_servicegroup  = '/etc/nagios/conf.d/servicegroups.cfg'
+      $config_hostgroup     = '/etc/nagios/conf.d/hostgroups.cfg'
+      $config_contact       = '/etc/nagios/conf.d/contacts.cfg'
+      $config_contactgroup  = '/etc/nagios/conf.d/contactgroups.cfg'
+      $config_timeperiod    = '/etc/nagios/conf.d/timeperiods.cfg'
       $xfer_method          = 'rsync'
+      $files_to_purge       = [ '/etc/nagios/commands.cfg',
+                                '/etc/nagios/conf.d/contacts_nagios2.cfg',
+                                '/etc/nagios/conf.d/extinfo_nagios2.cfg',
+                                '/etc/nagios/conf.d/generic-host_nagios2.cfg',
+                                '/etc/nagios/conf.d/generic-service_nagios2.cfg',
+                                '/etc/nagios/conf.d/hostgroups_nagios2.cfg',
+                                '/etc/nagios/conf.d/localhost_nagios2.cfg',
+                                '/etc/nagios/conf.d/services_nagios2.cfg',
+                                '/etc/nagios/conf.d/timeperiods_nagios2.cfg' ]
     }
     default: {
       fail("Unsupported operating system '${::osfamily}'.")
