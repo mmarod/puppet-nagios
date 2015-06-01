@@ -37,9 +37,9 @@ class nagios::monitor(
     ensure  => running,
   }
 
-  file { $files_to_purge:
+  file { $nagios::params::files_to_purge:
     ensure  => absent,
-    require => Package[$packages],
+    require => Package[$nagios::params::packages],
     notify  => Service[$nagios::params::nagios_service_name]
   }
 
