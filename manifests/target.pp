@@ -23,10 +23,10 @@
 # @param xfer_method [String] (rsync/storeconfig) How to transfer the Nagios config to the monitor.
 #
 class nagios::target(
-  $target_host          = undef,
-  $target_path          = '/etc/nagios3/conf.d/hosts',
+  $target_host          = $nagios::config::monitor_host,
+  $target_path          = $nagios::config::target_path,
+  $remote_user          = $nagios::config::nagios_user,
   $local_user           = 'nagsync',
-  $remote_user          = 'nagios',
   $use_nrpe             = true,
   $xfer_method          = $nagios::params::xfer_method,
 ) inherits nagios::params {

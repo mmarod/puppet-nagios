@@ -3,7 +3,15 @@
 # @example Standard configuration
 #   include '::nagios::monitor'
 #
+# @example Configuration for a Debian monitor.
+#   nagios::config::monitor_host: nagios.example.com
+#
+# @example Configuration for a RedHat monitor.
+#   nagios::config::monitor_host: nagios.example.com
+#   nagios::config::target_path: /etc/nagios/conf.d/hosts
+#
 # @param monitor_host [String] The domain name or IP address of the monitor.
+# @param target_path [String] The path where host configurations will be stored.
 # @param nagios_user [String] The nagios user.
 # @param nagios_group [String] The nagios group.
 # @param cfg_files [Array] A list of cfg_files to include.
@@ -12,15 +20,17 @@
 # @param manage_firewall [Boolean] Whether or not to open port 873 for rsync.
 #
 class nagios::monitor(
-  $monitor_host        = $::clientcert,
-  $nagios_user         = $nagios::params::nagios_user,
-  $nagios_group        = $nagios::params::nagios_group,
+  $monitor_host        = $nagios::config::monitor_host,
+  $target_path         = $nagios::config::target_path,
+  $nagios_user         = $nagios::config::nagios_user,
+  $nagios_group        = $nagios::config::nagios_group,
   $cfg_files           = $nagios::params::cfg_files,
   $cfg_dirs            = $nagios::params::cfg_dirs,
   $config              = {},
   $manage_firewall     = false,
 ) inherits nagios::params {
   validate_string($monitor_host)
+  validate_absolute_path($target_path)
   validate_string($nagios_user)
   validate_string($nagios_group)
   validate_array($cfg_files)
@@ -29,7 +39,7 @@ class nagios::monitor(
   validate_bool($manage_firewall)
 
   $filebase_escaped = regsubst($nagios::params::filebase, '\.', '_', 'G')
-  $config_file = "${nagios::params::confdir_hosts}/${filebase_escaped}.cfg"
+  $config_file = "${target_path}/${filebase_escaped}.cfg"
 
   ensure_packages($nagios::params::packages)
 
@@ -99,7 +109,7 @@ class nagios::monitor(
     require => Package[$nagios::params::packages]
   } ->
 
-  file { $nagios::params::confdir_hosts:
+  file { $target_path:
     ensure => directory,
     owner  => $nagios_user,
   }
@@ -124,8 +134,8 @@ class nagios::monitor(
   # Purge any hosts that are not collected in the above method
   # Note: inotify-nagios will automatically reload Nagios upon deletion
   exec { 'remove-unmanaged-hosts':
-    command => "/usr/bin/find ${nagios::params::confdir_hosts} ! -path ${nagios::params::confdir_hosts} -exec basename {} \\; | /bin/grep -Fxvf ${nagios::params::nagios_targets} | awk '{print \"${nagios::params::confdir_hosts}/\" \$1}' | /usr/bin/xargs rm",
-    onlyif  => "/usr/bin/find ${nagios::params::confdir_hosts} ! -path ${nagios::params::confdir_hosts} -exec basename {} \\; | /bin/grep -Fxvf ${nagios::params::nagios_targets}",
+    command => "/usr/bin/find ${target_path} ! -path ${target_path} -exec basename {} \\; | /bin/grep -Fxvf ${nagios::params::nagios_targets} | awk '{print \"${target_path}/\" \$1}' | /usr/bin/xargs rm",
+    onlyif  => "/usr/bin/find ${target_path} ! -path ${target_path} -exec basename {} \\; | /bin/grep -Fxvf ${nagios::params::nagios_targets}",
     require => Concat_file[$nagios::params::nagios_targets]
   }
 
@@ -451,7 +461,7 @@ class nagios::monitor(
   include rsync::server
 
   rsync::server::module { 'nagios':
-    path    => $nagios::params::confdir_hosts,
+    path    => $target_path,
     require => Package[$nagios::params::packages]
   }
 
