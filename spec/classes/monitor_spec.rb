@@ -209,6 +209,63 @@ describe 'nagios::monitor' do
       .with_before(/Concat\[\/etc\/nagios3\/conf.d\/timeperiods.cfg\]/)
   end
 
+  context "with hiera yaml containing default keys" do
+    it do
+      should contain_nagios_contactgroup('admins') \
+        .with_alias('overridden')
+    end
+
+    it do
+      should contain_nagios_timeperiod('24x7') \
+        .with_alias('overridden')
+    end
+
+    it do
+      should contain_nagios_timeperiod('workhours') \
+        .with_alias('overridden')
+    end
+
+    it do
+      should contain_nagios_timeperiod('nonworkhours') \
+        .with_alias('overridden')
+    end
+
+    it do
+      should contain_nagios_timeperiod('never') \
+        .with_alias('overridden')
+    end
+
+    it do
+      should contain_nagios_host('generic-host') \
+        .with_check_command('overridden')
+    end
+
+    it do
+      should contain_nagios_service('generic-service') \
+        .with_contact_groups('overridden')
+    end
+
+    it do
+      should contain_nagios_command('notify-host-by-email') \
+        .with_command_line('overridden')
+    end
+
+    it do
+      should contain_nagios_command('notify-service-by-email') \
+        .with_command_line('overridden')
+    end
+
+    it do
+      should contain_nagios_command('process-host-perfdata') \
+        .with_command_line('overridden')
+    end
+
+    it do
+      should contain_nagios_command('process-service-perfdata') \
+        .with_command_line('overridden')
+    end
+  end
+
   it do
     should contain_nagios__plugin('testplugin') \
       .with_content('moo')
