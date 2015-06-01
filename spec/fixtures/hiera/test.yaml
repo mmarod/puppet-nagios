@@ -1,4 +1,5 @@
 ---
+nagios::config::monitor_host: nagios.example.com
 nagios_plugins:
   testplugin:
     content: moo
