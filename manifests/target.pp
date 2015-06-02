@@ -85,6 +85,8 @@ class nagios::target(
     content => "${filebase_escaped}.cfg",
   }
 
+  Concat_fragment<||> -> Concat_file<||>
+
   # Merge host and service configuration into a single file.
   concat_file { 'nagios-config':
     tag      => 'nagios-config',
