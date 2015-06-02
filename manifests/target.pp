@@ -60,10 +60,20 @@ class nagios::target(
       } -> Nagios_host <||> -> Nagios_service <||>
     }
     'windows': {
-      exec { 'delete-nagios-configurations':
-        command  => [ "C:/windows/system32/cmd.exe /c del ${nagios::params::naginator_confdir}/nagios_config.cfg",
-                      "C:/windows/system32/cmd.exe /c del ${nagios::params::naginator_confdir}/nagios_host.cfg",
-                      "C:/windows/system32/cmd.exe /c del ${nagios::params::naginator_confdir}/nagios_service.cfg" ]
+      exec { 'delete-nagios-config':
+        command  => "C:/windows/system32/cmd.exe /c del ${nagios::params::naginator_confdir}/nagios_host.cfg",
+        require  => File[$nagios::params::naginator_confdir],
+        loglevel => 'debug',
+      } ->
+
+      exec { 'delete-nagios-service-config':
+        command  => "C:/windows/system32/cmd.exe /c del ${nagios::params::naginator_confdir}/nagios_service.cfg",
+        require  => File[$nagios::params::naginator_confdir],
+        loglevel => 'debug',
+      } ->
+
+      exec { 'delete-nagios-host-config':
+        command  => "C:/windows/system32/cmd.exe /c del ${nagios::params::naginator_confdir}/nagios_config.cfg",
         require  => File[$nagios::params::naginator_confdir],
         loglevel => 'debug',
       } -> Nagios_host<||> -> Nagios_service<||>
@@ -97,6 +107,7 @@ class nagios::target(
 
   # Merge host and service configuration into a single file.
   Concat_fragment<| tag == 'nagios-config' |> -> concat_file { 'nagios-config':
+    tag      => 'nagios-config',
     path     => $config_file,
     owner    => $local_user,
     mode     => $nagios::params::config_file_mode,
@@ -104,13 +115,13 @@ class nagios::target(
   }
 
   @concat_fragment { 'nagios-host-config':
-    target => 'nagios-config',
+    tag    => 'nagios-config',
     source => "${nagios::params::naginator_confdir}/nagios_host.cfg",
     order  => '01',
   }
 
   @concat_fragment { 'nagios-service-config':
-    target => 'nagios-config',
+    tag    => 'nagios-config',
     source => "${nagios::params::naginator_confdir}/nagios_service.cfg",
     order  => '02',
   }
