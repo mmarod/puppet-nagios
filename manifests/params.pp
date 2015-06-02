@@ -1,8 +1,8 @@
 # Params class
 #
 class nagios::params {
-  case $::osfamily {
-    'Debian': {
+  case downcase($::osfamily) {
+    'debian': {
       $plugin_path          = '/usr/lib/nagios/plugins'
       $eventhandler_path    = '/usr/share/nagios3/plugins/eventhandlers'
       $nagios_cfg_path      = '/etc/nagios3/nagios.cfg'
@@ -35,7 +35,7 @@ class nagios::params {
                                 '/etc/nagios3/conf.d/services_nagios2.cfg',
                                 '/etc/nagios3/conf.d/timeperiods_nagios2.cfg' ]
     }
-    'RedHat': {
+    'redhat': {
       $plugin_path         = $::architecture ? {
         /x86_64/ => '/usr/lib64/nagios/plugins',
         default  => '/usr/lib/nagios/plugins',
@@ -73,26 +73,29 @@ class nagios::params {
                                 '/etc/nagios/conf.d/services_nagios2.cfg',
                                 '/etc/nagios/conf.d/timeperiods_nagios2.cfg' ]
     }
+    'windows': {}
     default: {
       fail("Unsupported operating system '${::osfamily}'.")
     }
   }
-  case $::kernel {
-    'Windows': {
+  case downcase($::kernel) {
+    'windows': {
       $local_user         = undef
       $naginator_confdir  = 'C:\nagios'
       $host_defaults      = { 'ensure' => 'present', 'target' => 'C:\nagios\nagios_host.cfg' }
       $service_defaults   = { 'ensure' => 'present', 'target' => 'C:\nagios\nagios_service.cfg' }
       $xfer_method        = 'rsync'
       $use_nrpe           = false
+      $sep                = '\\'
     }
-    'Linux': {
+    'linux': {
       $local_user         = 'nagsync'
       $naginator_confdir  = '/etc/nagios'
       $host_defaults      = { 'ensure' => 'present' }
       $service_defaults   = { 'ensure' => 'present' }
       $xfer_method        = 'storeconfig'
       $use_nrpe           = true
+      $sep                = '/'
     }
     default: {
       fail("Unsupported kernel '${::kernel}'.")

@@ -67,7 +67,7 @@ class nagios::target(
   }
 
   $filebase_escaped   = regsubst($nagios::params::filebase, '\.', '_', 'G')
-  $config_file        = "${nagios::params::naginator_confdir}/nagios_config.cfg"
+  $config_file        = "${nagios::params::naginator_confdir}${sep}nagios_config.cfg"
 
   # Collect Hiera data
   $hosts              = hiera_hash('nagios_hosts', {})
@@ -84,20 +84,21 @@ class nagios::target(
   }
 
   # Merge host and service configuration into a single file.
-  concat { $config_file:
+  concat { 'nagios-config':
+    path  => $config_file,
     owner => $local_user,
     mode  => '0644'
   }
 
   concat::fragment { 'nagios-host-config':
-    target => $config_file,
-    source => "${nagios::params::naginator_confdir}/nagios_host.cfg",
+    target => 'nagios-config',
+    source => "${nagios::params::naginator_confdir}${sep}nagios_host.cfg",
     order  => '01',
   }
 
   concat::fragment { 'nagios-service-config':
-    target => $config_file,
-    source => "${nagios::params::naginator_confdir}/nagios_service.cfg",
+    target => 'nagios-config',
+    source => "${nagios::params::naginator_confdir}${sep}nagios_service.cfg",
     order  => '02',
   }
 

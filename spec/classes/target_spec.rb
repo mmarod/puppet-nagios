@@ -1,6 +1,7 @@
 require 'spec_helper'
 
 describe 'nagios::target' do
+  let(:hiera_config) { 'spec/fixtures/hiera/hiera.yaml' }
   let(:facts) {{
     :osfamily   => 'Debian',
     :kernel     => 'Linux',
@@ -9,31 +10,99 @@ describe 'nagios::target' do
     :clientcert => 'foo.example.com'
   }}
 
-  let(:hiera_config) { 'spec/fixtures/hiera/hiera.yaml' }
-
   it do
     should contain_class('nagios::target')
   end
 
-  it do 
-    should contain_user('nagsync')
+  context "with kernel == 'Windows'" do
+    let(:facts) {{
+      :osfamily   => 'Windows',
+      :kernel     => 'Windows',
+      :hostname   => 'foo',
+      :ipaddress  => '1.2.3.4',
+      :clientcert => 'foo.example.com'
+    }}
+
+    it do 
+      should contain_file('C:\nagios') \
+        .with_ensure('directory')
+    end
+
+    it do
+      should_not contain_file('/etc/nagios/.ssh')
+    end
+
+    it do
+      should contain_concat('nagios-config') \
+        .with_path('C:\nagios\nagios_config.cfg')
+    end
+
+    it do
+      should contain_concat__fragment('nagios-host-config') \
+        .with_target('nagios-config') \
+        .with_source('C:\nagios\nagios_host.cfg') \
+        .with_order('01')
+    end
+
+    it do
+      should contain_concat__fragment('nagios-service-config') \
+        .with_target('nagios-config') \
+        .with_source('C:\nagios\nagios_service.cfg') \
+        .with_order('02')
+    end
   end
 
-  it do 
-    should contain_file('/etc/nagios') \
-      .with_ensure('directory') \
-      .with_owner('nagsync') \
-      .with_mode('0755') \
-      .with_require('User[nagsync]')
-  end
+  context "with kernel == 'Linux'" do
+    let(:facts) {{
+      :osfamily   => 'Debian',
+      :kernel     => 'Linux',
+      :hostname   => 'foo',
+      :ipaddress  => '1.2.3.4',
+      :clientcert => 'foo.example.com'
+    }}
 
-  it do
-    should contain_file('/etc/nagios/.ssh') \
-      .with_ensure('directory') \
-      .with_owner('nagsync') \
-      .with_mode('0755') \
-      .with_require(/User\[nagsync\]/) \
-      .with_require(/File\[\/etc\/nagios\]/)
+    it do 
+      should contain_user('nagsync')
+    end
+
+    it do 
+      should contain_file('/etc/nagios') \
+        .with_ensure('directory') \
+        .with_owner('nagsync') \
+        .with_mode('0755') \
+        .with_require('User[nagsync]')
+    end
+
+    it do
+      should contain_file('/etc/nagios/.ssh') \
+        .with_ensure('directory') \
+        .with_owner('nagsync') \
+        .with_mode('0755') \
+        .with_require(/User\[nagsync\]/) \
+        .with_require(/File\[\/etc\/nagios\]/)
+    end
+
+    it do
+      should contain_concat('nagios-config') \
+        .with_path('/etc/nagios/nagios_config.cfg') \
+        .with_owner('nagsync') \
+        .with_mode('0644')
+    end
+
+    it do
+      should contain_concat__fragment('nagios-host-config') \
+        .with_target('nagios-config') \
+        .with_source('/etc/nagios/nagios_host.cfg') \
+        .with_order('01')
+    end
+
+    it do
+      should contain_concat__fragment('nagios-service-config') \
+        .with_target('nagios-config') \
+        .with_source('/etc/nagios/nagios_service.cfg') \
+        .with_order('02')
+    end
+
   end
 
   it do
@@ -62,42 +131,6 @@ describe 'nagios::target' do
     it do
       should_not contain_class('nrpe')
     end
-  end
-
-  context "with use_nrpe == true" do
-    let(:params) {{ :use_nrpe => true }}
-
-    it do
-      should contain_class('nrpe')
-    end
-
-    it do
-      should contain_nrpe__command('testnrpecommand')
-    end
-
-    it do
-      should contain_nrpe__plugin('testnrpeplugin')
-    end
-  end
-
-  it do
-    should contain_concat('/etc/nagios/nagios_config.cfg') \
-      .with_owner('nagsync') \
-      .with_mode('0644')
-  end
-
-  it do
-    should contain_concat__fragment('nagios-host-config') \
-      .with_target('/etc/nagios/nagios_config.cfg') \
-      .with_source('/etc/nagios/nagios_host.cfg') \
-      .with_order('01')
-  end
-
-  it do
-    should contain_concat__fragment('nagios-service-config') \
-      .with_target('/etc/nagios/nagios_config.cfg') \
-      .with_source('/etc/nagios/nagios_service.cfg') \
-      .with_order('02')
   end
 
   context "with xfer_method == 'storeconfig'" do 
@@ -130,6 +163,22 @@ describe 'nagios::target' do
         .with_user('nagios') \
         .with_keyfile('/etc/nagios/.ssh/id_rsa') \
         .with_source('/etc/nagios/nagios_config.cfg')
+    end
+  end
+
+  context "with use_nrpe == true" do
+    let(:params) {{ :use_nrpe => true }}
+
+    it do
+      should contain_class('nrpe')
+    end
+
+    it do
+      should contain_nrpe__command('testnrpecommand')
+    end
+
+    it do
+      should contain_nrpe__plugin('testnrpeplugin')
     end
   end
 end
