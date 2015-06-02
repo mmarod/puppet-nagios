@@ -36,7 +36,7 @@ class nagios::target(
   file { $nagios::params::naginator_confdir:
     ensure => directory,
     owner  => $local_user,
-    mode   => '0755',
+    mode   => $nagios::params::naginator_confdir_mode,
   } -> Nagios_host <||> -> Nagios_service <||>
 
   case downcase($::kernel) {

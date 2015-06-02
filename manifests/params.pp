@@ -10,22 +10,22 @@ class nagios::params {
 
   case downcase($::kernel) {
     'windows': {
-      $local_user         = undef
-      $naginator_confdir  = 'C:\nagios'
-      $host_defaults      = { 'ensure' => 'present', 'target' => 'C:\nagios\nagios_host.cfg' }
-      $service_defaults   = { 'ensure' => 'present', 'target' => 'C:\nagios\nagios_service.cfg' }
-      $xfer_method        = 'storeconfig'
-      $use_nrpe           = false
-      $sep                = '\\'
+      $local_user             = undef
+      $naginator_confdir      = 'C:\nagios'
+      $naginator_confdir_mode = undef
+      $host_defaults          = { 'ensure' => 'present', 'target' => 'C:\nagios\nagios_host.cfg' }
+      $service_defaults       = { 'ensure' => 'present', 'target' => 'C:\nagios\nagios_service.cfg' }
+      $xfer_method            = 'storeconfig'
+      $use_nrpe               = false
     }
     'linux': {
-      $local_user         = 'nagsync'
-      $naginator_confdir  = '/etc/nagios'
-      $host_defaults      = { 'ensure' => 'present' }
-      $service_defaults   = { 'ensure' => 'present' }
-      $xfer_method        = 'rsync'
-      $use_nrpe           = true
-      $sep                = '/'
+      $local_user             = 'nagsync'
+      $naginator_confdir      = '/etc/nagios'
+      $naginator_confdir_mode = '0755'
+      $host_defaults          = { 'ensure' => 'present' }
+      $service_defaults       = { 'ensure' => 'present' }
+      $xfer_method            = 'rsync'
+      $use_nrpe               = true
 
       case downcase($::osfamily) {
         'debian': {
