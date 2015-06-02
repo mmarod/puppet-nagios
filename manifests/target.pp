@@ -10,18 +10,28 @@
 #
 # @example A regular node that is not the Nagios monitor
 #   class { '::nagios::target':
-#     target_host    => 'nagios.example.com'
+#     monitor_host    => 'nagios.example.com'
 #   }
 #
-class nagios::target() inherits nagios::params {
+# @param local_user [String] The local user created on a target to use for
+#   rsync'ing.
+# @param use_nrpe [Boolean] Whether or not to configure nrpe on a target.
+# @param xfer_method [String] (rsync/storeconfig) How to transfer the Nagios config to the monitor.
+#
+class nagios::target(
+  $local_user       = 'nagsync',
+  $use_nrpe         = true,
+  $xfer_method      = $nagios::params::xfer_method
+) inherits nagios::params {
+  validate_string($local_user)
+  validate_bool($use_nrpe)
+  validate_string($xfer_method)
+
   include nagios::config
 
-  $target_host = $nagios::config::target_host
+  $monitor_host = $nagios::config::monitor_host
   $target_path = $nagios::config::target_path
   $remote_user = $nagios::config::nagios_user
-  $local_user  = $nagios::config::local_user
-  $use_nrpe    = $nagios::config::use_nrpe
-  $xfer_method = $nagios::config::xfer_method,
 
   Nagios_host<||> -> Rsync::Put<||>
   Nagios_service<||> -> Rsync::Put<||>
@@ -100,7 +110,7 @@ class nagios::target() inherits nagios::params {
         require => File[$nagios::params::ssh_confdir]
       }
 
-      $rsync_dest = "${target_host}:${target_path}/${filebase_escaped}.cfg"
+      $rsync_dest = "${monitor_host}:${target_path}/${filebase_escaped}.cfg"
 
       # $::nagios_key_exists is used to determine whether or not $::nagios_key
       # is a fact yet. It won't be on the first Puppet run.

@@ -429,6 +429,7 @@ describe 'nagios::monitor' do
     let(:params) {{
       :manage_firewall => true
     }}
+
     it do
       should contain_firewall('200 Allow rsync access for Nagios') \
         .with_chain('INPUT') \

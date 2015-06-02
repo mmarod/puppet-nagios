@@ -10,10 +10,6 @@ describe 'nagios::target' do
 
   let(:hiera_config) { 'spec/fixtures/hiera/hiera.yaml' }
 
-  let(:params) {{
-    :target_host  => '1.2.3.5'
-  }}
-
   it do
     should contain_class('nagios::target')
   end
@@ -113,7 +109,6 @@ describe 'nagios::target' do
   context "with xfer_method == 'rsync'" do
     let(:params) {{
       :xfer_method => 'rsync',
-      :target_host  => '1.2.3.5'
     }}
 
     it do
@@ -129,7 +124,7 @@ describe 'nagios::target' do
     end
 
     it do
-      should contain_rsync__put('1.2.3.5:/etc/nagios3/conf.d/hosts/foo_example_com.cfg') \
+      should contain_rsync__put('nagios.example.com:/etc/nagios3/conf.d/hosts/foo_example_com.cfg') \
         .with_user('nagios') \
         .with_keyfile('/etc/nagios/.ssh/id_rsa') \
         .with_source('/etc/nagios/nagios_config.cfg')

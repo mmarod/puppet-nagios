@@ -3,6 +3,11 @@
 # @example Standard configuration
 #   include '::nagios::monitor'
 #
+# @example Include /etc/nagios3/commands.cfg
+#   class { '::nagios::monitor':
+#     cfg_files => [ '/etc/nagios3/commands.cfg' ]
+#   }
+#
 # @example Configuration for a Debian monitor.
 #   nagios::config::monitor_host: nagios.example.com
 #
@@ -10,17 +15,29 @@
 #   nagios::config::monitor_host: nagios.example.com
 #   nagios::config::target_path: /etc/nagios/conf.d/hosts
 #
-class nagios::monitor() inherits nagios::params {
+# @param cfg_files [Array] A list of cfg_files to include in nagios.cfg.
+# @param cfg_dirs [Array] A list of cfg_dirs to include in nagios.cfg.
+# @param cfg_extra [Hash] A hash of key/value pairs to set options with in nagios.cfg.
+# @param manage_firewall [Boolean] Whether or not to open port 873 for the rsync
+#   server on the monitor.
+#
+class nagios::monitor(
+  $cfg_files           = $nagios::params::cfg_files,
+  $cfg_dirs            = $nagios::params::cfg_dirs,
+  $cfg_extra           = {},
+  $manage_firewall     = false,
+) inherits nagios::params {
+  validate_array($cfg_files)
+  validate_array($cfg_dirs)
+  validate_hash($cfg_extra)
+  validate_bool($manage_firewall)
+
   include nagios::config
 
   $monitor_host        = $nagios::config::monitor_host
   $target_path         = $nagios::config::target_path
   $nagios_user         = $nagios::config::nagios_user
   $nagios_group        = $nagios::config::nagios_group
-  $cfg_files           = $nagios::config::cfg_files
-  $cfg_dirs            = $nagios::config::cfg_dirs
-  $config              = $nagios::config::config
-  $manage_firewall     = $nagios::config::manage_firewall
 
   $filebase_escaped = regsubst($nagios::params::filebase, '\.', '_', 'G')
   $config_file = "${target_path}/${filebase_escaped}.cfg"
@@ -146,7 +163,7 @@ class nagios::monitor() inherits nagios::params {
   }
 
   # Takes a hash of changes to make and applies them with Augeas.
-  $changes_array = join_keys_to_values($config, ' \'"')
+  $changes_array = join_keys_to_values($cfg_extra, ' \'"')
   $changes_quoted = suffix($changes_array, '"\'')
   $changes = prefix($changes_quoted, 'set ')
 

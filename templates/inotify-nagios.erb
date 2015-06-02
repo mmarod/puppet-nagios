@@ -18,7 +18,7 @@ EOF
 /bin/sleep 1
 
 # Use `stuff` to run the inotifywait loop in the screen
-/usr/bin/screen -x inotify_nagios -p 0 -X stuff "while inotifywait -q --timefmt '%m-%d-%y %H:%M:%S' --format '[%T] %:e %f' -e modify,create,delete <%= @confdir_hosts -%>; do echo -n \"[\$(date +\'%m-%d-%y %H:%M:%S\')] \"; service <%= @nagios_service_name -%> reload; done;\r"
+/usr/bin/screen -x inotify_nagios -p 0 -X stuff "while inotifywait -q --timefmt '%m-%d-%y %H:%M:%S' --format '[%T] %:e %f' -e modify,create,delete <%= @target_path -%>; do echo -n \"[\$(date +\'%m-%d-%y %H:%M:%S\')] \"; service <%= @nagios_service_name -%> reload; done;\r"
 
 # Store the pid to /var/run/inotify-nagios.pid
 /usr/bin/basename /var/run/screen/S-root/*inotify_nagios .inotify_nagios | tail -n1 > /var/run/inotify-nagios.pid
