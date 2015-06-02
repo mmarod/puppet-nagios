@@ -19,7 +19,9 @@ class nagios::params {
       $service_defaults       = { 'ensure' => 'present', 'target' => 'C:/nagios/nagios_service.cfg', 'loglevel' => 'debug' }
       $xfer_method            = 'storeconfig'
       $use_nrpe               = false
+      # lint:ignore:double_quoted_strings lint:ignore:slash_comments
       $sep                    = "\\"
+      # lint:endignore
     }
     'linux': {
       $local_user             = 'nagsync'
