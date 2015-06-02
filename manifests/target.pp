@@ -34,18 +34,20 @@ class nagios::target(
   $remote_user = $nagios::config::nagios_user
 
   file { $nagios::params::naginator_confdir:
-    ensure  => directory,
-    owner   => $local_user,
-    mode    => '0755',
-    require => User[$local_user]
+    ensure => directory,
+    owner  => $local_user,
+    mode   => '0755',
   } -> Nagios_host <||> -> Nagios_service <||>
 
-  case $::kernel {
-    'Linux': {
+  case downcase($::kernel) {
+    'linux': {
       Nagios_host<||> -> Rsync::Put<||>
       Nagios_service<||> -> Rsync::Put<||>
 
-      user { $local_user: ensure => present }
+      user { $local_user:
+        ensure => present,
+        before => File[$nagios::params::naginator_confdir]
+      }
 
       file { '/etc/nagios/.ssh':
         ensure  => directory,
@@ -55,7 +57,7 @@ class nagios::target(
       } -> Nagios_host <||> -> Nagios_service <||>
     }
     'windows': {
-      exec { 'del-nagios-host':
+      exec { 'delete-nagios-host-config':
         command  => "C:\\windows\\system32\\cmd.exe /c del ${nagios::params::naginator_confdir}\\nagios_config.cfg",
         require  => File[$nagios::params::naginator_confdir],
         loglevel => 'debug',
@@ -67,7 +69,7 @@ class nagios::target(
   }
 
   $filebase_escaped   = regsubst($nagios::params::filebase, '\.', '_', 'G')
-  $config_file        = "${nagios::params::naginator_confdir}${sep}nagios_config.cfg"
+  $config_file        = "${nagios::params::naginator_confdir}/nagios_config.cfg"
 
   # Collect Hiera data
   $hosts              = hiera_hash('nagios_hosts', {})
@@ -84,21 +86,23 @@ class nagios::target(
   }
 
   # Merge host and service configuration into a single file.
-  concat { 'nagios-config':
-    path  => $config_file,
-    owner => $local_user,
-    mode  => '0644'
+  concat_file { 'nagios-config':
+    tag      => 'nagios-config',
+    path     => $config_file,
+    owner    => $local_user,
+    mode     => '0644',
+    loglevel => 'debug',
   }
 
-  concat::fragment { 'nagios-host-config':
-    target => 'nagios-config',
-    source => "${nagios::params::naginator_confdir}${sep}nagios_host.cfg",
+  concat_fragment { 'nagios-host-config':
+    tag    => 'nagios-config',
+    source => "${nagios::params::naginator_confdir}/nagios_host.cfg",
     order  => '01',
   }
 
-  concat::fragment { 'nagios-service-config':
-    target => 'nagios-config',
-    source => "${nagios::params::naginator_confdir}${sep}nagios_service.cfg",
+  concat_fragment { 'nagios-service-config':
+    tag    => 'nagios-config',
+    source => "${nagios::params::naginator_confdir}/nagios_service.cfg",
     order  => '02',
   }
 

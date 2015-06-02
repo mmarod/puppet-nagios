@@ -33,21 +33,23 @@ describe 'nagios::target' do
     end
 
     it do
-      should contain_concat('nagios-config') \
-        .with_path('C:\nagios\nagios_config.cfg')
+      should contain_concat_file('nagios-config') \
+        .with_path('C:\nagios/nagios_config.cfg') \
+        .with_tag('nagios-config') \
+        .with_loglevel('debug') \
     end
 
     it do
-      should contain_concat__fragment('nagios-host-config') \
-        .with_target('nagios-config') \
-        .with_source('C:\nagios\nagios_host.cfg') \
+      should contain_concat_fragment('nagios-host-config') \
+        .with_tag('nagios-config') \
+        .with_source('C:\nagios/nagios_host.cfg') \
         .with_order('01')
     end
 
     it do
-      should contain_concat__fragment('nagios-service-config') \
-        .with_target('nagios-config') \
-        .with_source('C:\nagios\nagios_service.cfg') \
+      should contain_concat_fragment('nagios-service-config') \
+        .with_tag('nagios-config') \
+        .with_source('C:\nagios/nagios_service.cfg') \
         .with_order('02')
     end
   end
@@ -62,15 +64,15 @@ describe 'nagios::target' do
     }}
 
     it do 
-      should contain_user('nagsync')
+      should contain_user('nagsync') \
+        .with_before('File[/etc/nagios]')
     end
 
     it do 
       should contain_file('/etc/nagios') \
         .with_ensure('directory') \
         .with_owner('nagsync') \
-        .with_mode('0755') \
-        .with_require('User[nagsync]')
+        .with_mode('0755')
     end
 
     it do
@@ -83,22 +85,23 @@ describe 'nagios::target' do
     end
 
     it do
-      should contain_concat('nagios-config') \
+      should contain_concat_file('nagios-config') \
+        .with_tag('nagios-config') \
         .with_path('/etc/nagios/nagios_config.cfg') \
         .with_owner('nagsync') \
         .with_mode('0644')
     end
 
     it do
-      should contain_concat__fragment('nagios-host-config') \
-        .with_target('nagios-config') \
+      should contain_concat_fragment('nagios-host-config') \
+        .with_tag('nagios-config') \
         .with_source('/etc/nagios/nagios_host.cfg') \
         .with_order('01')
     end
 
     it do
-      should contain_concat__fragment('nagios-service-config') \
-        .with_target('nagios-config') \
+      should contain_concat_fragment('nagios-service-config') \
+        .with_tag('nagios-config') \
         .with_source('/etc/nagios/nagios_service.cfg') \
         .with_order('02')
     end
