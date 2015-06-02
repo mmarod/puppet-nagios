@@ -13,8 +13,10 @@ class nagios::params {
       $local_user             = undef
       $naginator_confdir      = 'C:\nagios'
       $naginator_confdir_mode = undef
-      $host_defaults          = { 'ensure' => 'present', 'target' => 'C:\nagios\nagios_host.cfg' }
-      $service_defaults       = { 'ensure' => 'present', 'target' => 'C:\nagios\nagios_service.cfg' }
+      $config_file_mode       = undef
+      $config_file_loglevel   = 'debug'
+      $host_defaults          = { 'ensure' => 'present', 'target' => 'C:/nagios/nagios_host.cfg' }
+      $service_defaults       = { 'ensure' => 'present', 'target' => 'C:/nagios/nagios_service.cfg' }
       $xfer_method            = 'storeconfig'
       $use_nrpe               = false
     }
@@ -22,6 +24,8 @@ class nagios::params {
       $local_user             = 'nagsync'
       $naginator_confdir      = '/etc/nagios'
       $naginator_confdir_mode = '0755'
+      $config_file_mode       = '0644'
+      $config_file_loglevel   = undef
       $host_defaults          = { 'ensure' => 'present' }
       $service_defaults       = { 'ensure' => 'present' }
       $xfer_method            = 'rsync'

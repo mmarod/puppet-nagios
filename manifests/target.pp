@@ -33,6 +33,12 @@ class nagios::target(
   $target_path = $nagios::config::target_path
   $remote_user = $nagios::config::nagios_user
 
+  # Make sure that the nagios configurations are generated before concat
+  # and rsync are used.
+  Nagios_host<||>    -> Concat_file<||> -> Rsync::Put<||>
+  Nagios_service<||> -> Concat_file<||> -> Rsync::Put<||>
+
+  # Ensure that /etc/nagios or C:\nagios exist
   file { $nagios::params::naginator_confdir:
     ensure => directory,
     owner  => $local_user,
@@ -41,9 +47,6 @@ class nagios::target(
 
   case downcase($::kernel) {
     'linux': {
-      Nagios_host<||> -> Rsync::Put<||>
-      Nagios_service<||> -> Rsync::Put<||>
-
       user { $local_user:
         ensure => present,
         before => File[$nagios::params::naginator_confdir]
@@ -57,11 +60,18 @@ class nagios::target(
       } -> Nagios_host <||> -> Nagios_service <||>
     }
     'windows': {
-      exec { 'delete-nagios-host-config':
-        command  => "C:\\windows\\system32\\cmd.exe /c del ${nagios::params::naginator_confdir}\\nagios_config.cfg",
+      exec { 'delete-nagios-configurations':
+        command  => [ "C:/windows/system32/cmd.exe /c del ${nagios::params::naginator_confdir}/nagios_config.cfg",
+                      "C:/windows/system32/cmd.exe /c del ${nagios::params::naginator_confdir}/nagios_host.cfg",
+                      "C:/windows/system32/cmd.exe /c del ${nagios::params::naginator_confdir}/nagios_service.cfg" ]
         require  => File[$nagios::params::naginator_confdir],
         loglevel => 'debug',
-      } -> Nagios_host<||> { loglevel => 'debug' }
+      } -> Nagios_host<||> -> Nagios_service<||>
+
+      # The Concat type does not let you set loglevel... This gets around that.
+      File<| name == $config_file |> {
+        loglevel => 'debug',
+      }
     }
     default: {
       fail("Invalid 'kernel' fact '${::kernel}'. Allowed values are 'windows' and 'linux'")
@@ -86,27 +96,25 @@ class nagios::target(
   }
 
   # Merge host and service configuration into a single file.
-  Concat_fragment <| tag == 'nagios-config' |>
-
-  concat_file { 'nagios-config':
-    tag      => 'nagios-config',
+  Concat_fragment<| tag == 'nagios-config' |> -> concat_file { 'nagios-config':
     path     => $config_file,
     owner    => $local_user,
-    mode     => '0644',
-    loglevel => 'debug',
+    mode     => $nagios::params::config_file_mode,
+    loglevel => $nagios::params::config_file_loglevel,
   }
 
   @concat_fragment { 'nagios-host-config':
-    tag    => 'nagios-config',
+    target => 'nagios-config',
     source => "${nagios::params::naginator_confdir}/nagios_host.cfg",
     order  => '01',
   }
 
   @concat_fragment { 'nagios-service-config':
-    tag    => 'nagios-config',
+    target => 'nagios-config',
     source => "${nagios::params::naginator_confdir}/nagios_service.cfg",
     order  => '02',
   }
+
 
   case $xfer_method {
     'storeconfig': {
