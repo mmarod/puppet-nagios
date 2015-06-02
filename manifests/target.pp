@@ -19,8 +19,8 @@
 # @param xfer_method [String] (rsync/storeconfig) How to transfer the Nagios config to the monitor.
 #
 class nagios::target(
-  $local_user       = 'nagsync',
-  $use_nrpe         = true,
+  $local_user       = $nagios::params::local_user,
+  $use_nrpe         = $nagios::params::use_nrpe,
   $xfer_method      = $nagios::params::xfer_method
 ) inherits nagios::params {
   validate_string($local_user)
@@ -33,30 +33,49 @@ class nagios::target(
   $target_path = $nagios::config::target_path
   $remote_user = $nagios::config::nagios_user
 
-  Nagios_host<||> -> Rsync::Put<||>
-  Nagios_service<||> -> Rsync::Put<||>
-
-  user { $local_user: ensure => present }
-
-  file { [ $nagios::params::naginator_confdir, $nagios::params::ssh_confdir ]:
+  file { $nagios::params::naginator_confdir:
     ensure  => directory,
     owner   => $local_user,
     mode    => '0755',
     require => User[$local_user]
   } -> Nagios_host <||> -> Nagios_service <||>
 
+  case $::kernel {
+    'Linux': {
+      Nagios_host<||> -> Rsync::Put<||>
+      Nagios_service<||> -> Rsync::Put<||>
+
+      user { $local_user: ensure => present }
+
+      file { '/etc/nagios/.ssh':
+        ensure  => directory,
+        owner   => $local_user,
+        mode    => '0755',
+        require => [ File[$nagios::params::naginator_confdir], User[$local_user] ]
+      } -> Nagios_host <||> -> Nagios_service <||>
+    }
+    'windows': {
+      exec { 'del-nagios-host':
+        command  => "C:\\windows\\system32\\cmd.exe /c del ${nagios::params::naginator_confdir}\\nagios_config.cfg",
+        require  => File[$nagios::params::naginator_confdir],
+        loglevel => 'debug',
+      } -> Nagios_host<||> { loglevel => 'debug' }
+    }
+    default: {
+      fail("Invalid 'kernel' fact '${::kernel}'. Allowed values are 'windows' and 'linux'")
+    }
+  }
+
   $filebase_escaped   = regsubst($nagios::params::filebase, '\.', '_', 'G')
   $config_file        = "${nagios::params::naginator_confdir}/nagios_config.cfg"
-
-  $create_defaults = { 'ensure' => 'present' }
 
   # Collect Hiera data
   $hosts              = hiera_hash('nagios_hosts', {})
   $services           = hiera_hash('nagios_services', {})
 
   # Create resources from Hiera data
-  create_resources('nagios_host',     $hosts,    $create_defaults)
-  create_resources('nagios_service',  $services, $create_defaults)
+  create_resources('nagios_host',     $hosts,    $nagios::params::host_defaults)
+  create_resources('nagios_service',  $services, $nagios::params::service_defaults)
 
   # Send our config filename to the monitor so our configuration is not purged.
   @@concat_fragment { "nagios_target_${filebase_escaped}":

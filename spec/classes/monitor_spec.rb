@@ -3,6 +3,7 @@ require 'spec_helper'
 describe 'nagios::monitor' do
   let(:facts) {{
     :osfamily       => 'Debian',
+    :kernel         => 'Linux',
     :hostname       => 'foo',
     :ipaddress      => '1.2.3.4',
     :clientcert     => 'foo.example.com',

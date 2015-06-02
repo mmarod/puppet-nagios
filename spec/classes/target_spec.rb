@@ -3,6 +3,7 @@ require 'spec_helper'
 describe 'nagios::target' do
   let(:facts) {{
     :osfamily   => 'Debian',
+    :kernel     => 'Linux',
     :hostname   => 'foo',
     :ipaddress  => '1.2.3.4',
     :clientcert => 'foo.example.com'
@@ -31,7 +32,8 @@ describe 'nagios::target' do
       .with_ensure('directory') \
       .with_owner('nagsync') \
       .with_mode('0755') \
-      .with_require('User[nagsync]')
+      .with_require(/User\[nagsync\]/) \
+      .with_require(/File\[\/etc\/nagios\]/)
   end
 
   it do

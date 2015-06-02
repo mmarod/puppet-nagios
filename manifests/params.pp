@@ -25,7 +25,6 @@ class nagios::params {
       $config_contact       = '/etc/nagios3/conf.d/contacts.cfg'
       $config_contactgroup  = '/etc/nagios3/conf.d/contactgroups.cfg'
       $config_timeperiod    = '/etc/nagios3/conf.d/timeperiods.cfg'
-      $xfer_method          = 'rsync'
       $files_to_purge       = [ '/etc/nagios3/commands.cfg',
                                 '/etc/nagios3/conf.d/contacts_nagios2.cfg',
                                 '/etc/nagios3/conf.d/extinfo_nagios2.cfg',
@@ -64,7 +63,6 @@ class nagios::params {
       $config_contact       = '/etc/nagios/conf.d/contacts.cfg'
       $config_contactgroup  = '/etc/nagios/conf.d/contactgroups.cfg'
       $config_timeperiod    = '/etc/nagios/conf.d/timeperiods.cfg'
-      $xfer_method          = 'rsync'
       $files_to_purge       = [ '/etc/nagios/commands.cfg',
                                 '/etc/nagios/conf.d/contacts_nagios2.cfg',
                                 '/etc/nagios/conf.d/extinfo_nagios2.cfg',
@@ -79,7 +77,27 @@ class nagios::params {
       fail("Unsupported operating system '${::osfamily}'.")
     }
   }
-  $naginator_confdir  = '/etc/nagios'
+  case $::kernel {
+    'Windows': {
+      $local_user         = undef
+      $naginator_confdir  = 'C:\nagios'
+      $host_defaults      = { 'ensure' => 'present', 'target' => 'C:\nagios\nagios_host.cfg' }
+      $service_defaults   = { 'ensure' => 'present', 'target' => 'C:\nagios\nagios_service.cfg' }
+      $xfer_method        = 'rsync'
+      $use_nrpe           = false
+    }
+    'Linux': {
+      $local_user         = 'nagsync'
+      $naginator_confdir  = '/etc/nagios'
+      $host_defaults      = { 'ensure' => 'present' }
+      $service_defaults   = { 'ensure' => 'present' }
+      $xfer_method        = 'storeconfig'
+      $use_nrpe           = true
+    }
+    default: {
+      fail("Unsupported kernel '${::kernel}'.")
+    }
+  }
   $ssh_confdir        = '/etc/nagios/.ssh'
   $plugin_mode        = '0755'
   $eventhandler_mode  = '0755'
