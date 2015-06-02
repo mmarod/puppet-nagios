@@ -15,8 +15,8 @@ class nagios::params {
       $naginator_confdir_mode = undef
       $config_file_mode       = undef
       $config_file_loglevel   = 'debug'
-      $host_defaults          = { 'ensure' => 'present', 'target' => 'C:/nagios/nagios_host.cfg' }
-      $service_defaults       = { 'ensure' => 'present', 'target' => 'C:/nagios/nagios_service.cfg' }
+      $host_defaults          = { 'ensure' => 'present', 'target' => 'C:/nagios/nagios_host.cfg', 'loglevel' => 'debug' }
+      $service_defaults       = { 'ensure' => 'present', 'target' => 'C:/nagios/nagios_service.cfg', 'loglevel' => 'debug' }
       $xfer_method            = 'storeconfig'
       $use_nrpe               = false
     }

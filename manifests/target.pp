@@ -61,27 +61,10 @@ class nagios::target(
     }
     'windows': {
       exec { 'delete-nagios-config':
-        command  => "C:/windows/system32/cmd.exe /c del ${nagios::params::naginator_confdir}/nagios_host.cfg",
-        require  => File[$nagios::params::naginator_confdir],
-        loglevel => 'debug',
-      } ->
-
-      exec { 'delete-nagios-service-config':
-        command  => "C:/windows/system32/cmd.exe /c del ${nagios::params::naginator_confdir}/nagios_service.cfg",
-        require  => File[$nagios::params::naginator_confdir],
-        loglevel => 'debug',
-      } ->
-
-      exec { 'delete-nagios-host-config':
-        command  => "C:/windows/system32/cmd.exe /c del ${nagios::params::naginator_confdir}/nagios_config.cfg",
+        command  => "C:\\windows\\system32\\cmd.exe /c del /q ${nagios::params::naginator_confdir}\\*",
         require  => File[$nagios::params::naginator_confdir],
         loglevel => 'debug',
       } -> Nagios_host<||> -> Nagios_service<||>
-
-      # The Concat type does not let you set loglevel... This gets around that.
-      File<| name == $config_file |> {
-        loglevel => 'debug',
-      }
     }
     default: {
       fail("Invalid 'kernel' fact '${::kernel}'. Allowed values are 'windows' and 'linux'")
@@ -106,7 +89,7 @@ class nagios::target(
   }
 
   # Merge host and service configuration into a single file.
-  Concat_fragment<| tag == 'nagios-config' |> -> concat_file { 'nagios-config':
+  concat_file { 'nagios-config':
     tag      => 'nagios-config',
     path     => $config_file,
     owner    => $local_user,
@@ -114,18 +97,17 @@ class nagios::target(
     loglevel => $nagios::params::config_file_loglevel,
   }
 
-  @concat_fragment { 'nagios-host-config':
+  concat_fragment { 'nagios-host-config':
     tag    => 'nagios-config',
     source => "${nagios::params::naginator_confdir}/nagios_host.cfg",
     order  => '01',
   }
 
-  @concat_fragment { 'nagios-service-config':
+  concat_fragment { 'nagios-service-config':
     tag    => 'nagios-config',
     source => "${nagios::params::naginator_confdir}/nagios_service.cfg",
     order  => '02',
   }
-
 
   case $xfer_method {
     'storeconfig': {
