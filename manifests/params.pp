@@ -19,6 +19,7 @@ class nagios::params {
       $service_defaults       = { 'ensure' => 'present', 'target' => 'C:/nagios/nagios_service.cfg', 'loglevel' => 'debug' }
       $xfer_method            = 'storeconfig'
       $use_nrpe               = false
+      $sep                    = "\\"
     }
     'linux': {
       $local_user             = 'nagsync'
@@ -30,6 +31,7 @@ class nagios::params {
       $service_defaults       = { 'ensure' => 'present' }
       $xfer_method            = 'rsync'
       $use_nrpe               = true
+      $sep                    = '/'
 
       case downcase($::osfamily) {
         'debian': {

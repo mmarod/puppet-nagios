@@ -33,6 +33,10 @@ class nagios::target(
   $target_path = $nagios::config::target_path
   $remote_user = $nagios::config::nagios_user
 
+  $filebase_escaped      = regsubst($nagios::params::filebase, '\.', '_', 'G')
+  $config_file_commented = "${nagios::params::naginator_confdir}${nagios::params::sep}nagios_config_commented.cfg"
+  $config_file           = "${nagios::params::naginator_confdir}${nagios::params::sep}nagios_config.cfg"
+
   # Make sure that the nagios configurations are generated before concat
   # and rsync are used.
   Nagios_host<||>    -> Concat_file<||> -> Rsync::Put<||>
@@ -65,14 +69,17 @@ class nagios::target(
         require  => File[$nagios::params::naginator_confdir],
         loglevel => 'debug',
       } -> Nagios_host<||> -> Nagios_service<||>
+
+      exec { 'remove-headers-from-config':
+        command  => "C:\\windows\\system32\\cmd.exe /c findstr /v /b /c:\"#\" ${config_file_commented} > ${config_file}",
+        require  => Concat_file['nagios-config'],
+        loglevel => 'debug',
+      }
     }
     default: {
       fail("Invalid 'kernel' fact '${::kernel}'. Allowed values are 'windows' and 'linux'")
     }
   }
-
-  $filebase_escaped   = regsubst($nagios::params::filebase, '\.', '_', 'G')
-  $config_file        = "${nagios::params::naginator_confdir}/nagios_config.cfg"
 
   # Collect Hiera data
   $hosts              = hiera_hash('nagios_hosts', {})
@@ -91,7 +98,7 @@ class nagios::target(
   # Merge host and service configuration into a single file.
   concat_file { 'nagios-config':
     tag      => 'nagios-config',
-    path     => $config_file,
+    path     => $config_file_commented,
     owner    => $local_user,
     mode     => $nagios::params::config_file_mode,
     loglevel => $nagios::params::config_file_loglevel,
