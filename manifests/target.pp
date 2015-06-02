@@ -85,9 +85,9 @@ class nagios::target(
     content => "${filebase_escaped}.cfg",
   }
 
-  Concat_fragment<||> -> Concat_file<||>
-
   # Merge host and service configuration into a single file.
+  Concat_fragment <| tag == 'nagios-config' |>
+
   concat_file { 'nagios-config':
     tag      => 'nagios-config',
     path     => $config_file,
@@ -96,13 +96,13 @@ class nagios::target(
     loglevel => 'debug',
   }
 
-  concat_fragment { 'nagios-host-config':
+  @concat_fragment { 'nagios-host-config':
     tag    => 'nagios-config',
     source => "${nagios::params::naginator_confdir}/nagios_host.cfg",
     order  => '01',
   }
 
-  concat_fragment { 'nagios-service-config':
+  @concat_fragment { 'nagios-service-config':
     tag    => 'nagios-config',
     source => "${nagios::params::naginator_confdir}/nagios_service.cfg",
     order  => '02',
