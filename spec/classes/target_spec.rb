@@ -33,8 +33,22 @@ describe 'nagios::target' do
     end
 
     it do
+      should contain_exec('delete-nagios-config') \
+        .with_command('C:\windows\system32\cmd.exe /c del /q C:\nagios\*') \
+        .with_require('File[C:\\nagios]') \
+        .with_loglevel('debug')
+    end
+
+    it do
+      should contain_exec('remove-headers-from-config') \
+        .with_command("C:\\windows\\system32\\cmd.exe /c findstr /v /b /c:\"#\" C:\\nagios\\nagios_config_commented.cfg > C:\\nagios\\nagios_config.cfg") \
+        .with_require('Concat_file[nagios-config]') \
+        .with_loglevel('debug')
+    end
+
+    it do
       should contain_concat_file('nagios-config') \
-        .with_path('C:\nagios/nagios_config.cfg') \
+        .with_path('C:\nagios\nagios_config_commented.cfg') \
         .with_tag('nagios-config') \
         .with_loglevel('debug') \
     end
@@ -87,7 +101,7 @@ describe 'nagios::target' do
     it do
       should contain_concat_file('nagios-config') \
         .with_tag('nagios-config') \
-        .with_path('/etc/nagios/nagios_config.cfg') \
+        .with_path('/etc/nagios/nagios_config_commented.cfg') \
         .with_owner('nagsync') \
         .with_mode('0644')
     end
@@ -105,7 +119,6 @@ describe 'nagios::target' do
         .with_source('/etc/nagios/nagios_service.cfg') \
         .with_order('02')
     end
-
   end
 
   it do
