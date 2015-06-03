@@ -51,23 +51,21 @@ class nagios::target(
 
   case downcase($::kernel) {
     'linux': {
+      $remove_comments_command = "/bin/sed '/^#/ d' ${config_file_commented} > ${config_file}"
+
       user { $local_user:
         ensure => present,
         before => File[$nagios::params::naginator_confdir]
       }
     }
     'windows': {
+      $remove_comments_command = "C:\\windows\\system32\\cmd.exe /c findstr /v /b /c:\"#\" ${config_file_commented} > ${config_file}"
+
       exec { 'delete-nagios-config':
         command  => "C:\\windows\\system32\\cmd.exe /c del /q ${nagios::params::naginator_confdir}\\nagios_*",
         require  => File[$nagios::params::naginator_confdir],
         loglevel => 'debug',
       } -> Nagios_host<||> -> Nagios_service<||>
-
-      exec { 'remove-headers-from-config':
-        command  => "C:\\windows\\system32\\cmd.exe /c findstr /v /b /c:\"#\" ${config_file_commented} > ${config_file}",
-        require  => Concat_file['nagios-config'],
-        loglevel => 'debug',
-      }
     }
     default: {
       fail("Invalid 'kernel' fact '${::kernel}'. Allowed values are 'windows' and 'linux'")
@@ -89,14 +87,6 @@ class nagios::target(
   }
 
   # Merge host and service configuration into a single file.
-  concat_file { 'nagios-config':
-    tag      => 'nagios-config',
-    path     => $config_file_commented,
-    owner    => $local_user,
-    mode     => $nagios::params::config_file_mode,
-    loglevel => $nagios::params::config_file_loglevel,
-  }
-
   concat_fragment { 'nagios-host-config':
     tag    => 'nagios-config',
     source => "${nagios::params::naginator_confdir}/nagios_host.cfg",
@@ -107,6 +97,22 @@ class nagios::target(
     tag    => 'nagios-config',
     source => "${nagios::params::naginator_confdir}/nagios_service.cfg",
     order  => '02',
+  }
+
+  concat_file { 'nagios-config':
+    tag            => 'nagios-config',
+    path           => $config_file_commented,
+    owner          => $local_user,
+    mode           => $nagios::params::config_file_mode,
+    ensure_newline => true,
+    loglevel       => $nagios::params::config_file_loglevel,
+  }
+
+  # Remove headers from the final config
+  exec { 'remove-headers-from-config':
+    command  => $remove_comments_command,
+    require  => Concat_file['nagios-config'],
+    loglevel => 'debug',
   }
 
   case $xfer_method {
@@ -159,7 +165,7 @@ class nagios::target(
         user        => $remote_user,
         keyfile     => $keypath,
         source      => $config_file,
-        subscribe   => Concat[$config_file]
+        subscribe   => Exec['remove-headers-from-config']
       }
     }
     default: {
