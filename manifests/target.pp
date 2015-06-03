@@ -141,12 +141,8 @@ class nagios::target(
         cwrsync_url           => "https://www.itefix.net/dl/cwRsync_${cwrsync_version}_x86_Free.zip"
       }
 
-      $type    = 'rsa'
-      $bits    = '2048'
-      $comment = 'Nagios SSH key'
-
       exec { 'ssh-keygen-nagios':
-        command => "ssh-keygen -t ${type} -b ${bits} -f '${keypath}' -N '' -C '${comment}'",
+        command => "ssh-keygen -t ${nagios::params::ssh_key_type} -b ${nagios::params::ssh_key_bits} -f '${nagios::params::keypath}' -N '' -C '${nagios::params::ssh_key_comment}'",
         path    => $exec_path,
         user    => $local_user,
         creates => $nagios::params::keypath,

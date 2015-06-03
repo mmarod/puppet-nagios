@@ -8,6 +8,9 @@ class nagios::params {
   $xfer_method        = 'rsync'
   $filebase           = $::clientcert
   $cwrsync_version    = '5.4.1'
+  $ssh_key_type       = 'rsa'
+  $ssh_key_bits       = '2048'
+  $ssh_key_comment    = 'Nagios SSH key'
 
   case downcase($::kernel) {
     'windows': {
