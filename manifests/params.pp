@@ -7,43 +7,46 @@ class nagios::params {
   $nagios_group       = 'nagios'
   $xfer_method        = 'rsync'
   $filebase           = $::clientcert
+  $cwrsync_version    = '5.4.1'
 
   case downcase($::kernel) {
     'windows': {
-      $environment            = [ 'NAGSYNCHOME=C:\nagios',
-                                  'CWRSYNCHOME=C:\nagios\cwrsync',
-                                  'HOME=C:\nagios' ]
-      $exec_path              = [ 'C:\nagios\cwrsync', 'C:\windows', 'C:\windows\system32' ]
-      $ssh_confdir            = 'C:\nagios\.ssh'
-      $ssh_keygen_path        = 'C:\nagios\cwrsync\ssh-keygen'
-      $sshkey_path            = 'C:\nagios\.ssh\known_hosts'
-      $local_user             = undef
-      $naginator_confdir      = 'C:\nagios'
-      $naginator_confdir_mode = undef
-      $config_file_mode       = undef
-      $config_file_loglevel   = 'debug'
-      $host_defaults          = { 'ensure' => 'present', 'target' => 'C:/nagios/nagios_host.cfg', 'loglevel' => 'debug' }
-      $service_defaults       = { 'ensure' => 'present', 'target' => 'C:/nagios/nagios_service.cfg', 'loglevel' => 'debug' }
-      $use_nrpe               = false
-      # lint:ignore:double_quoted_strings
-      $sep                    = "\\"
-      # lint:endignore
+      $remove_comments_command = 'C:\windows\system32\cmd.exe /c findstr /v /b /c:"#" C:\nagios\nagios_config_commented.cfg > C:\nagios\nagios_config.cfg'
+      $config_file_commented   = 'C:\nagios\nagios_config_commented.cfg'
+      $config_file             = 'C:\nagios\nagios_config.cfg'
+      $keypath                 = 'C:\nagios\.ssh\id_rsa'
+      $rsync_source            = '/cygdrive/c/nagios/nagios_config.cfg'
+      $rsync_keypath           = '/cygdrive/c/nagios/.ssh/id_rsa'
+      $ssh_confdir             = 'C:\nagios\.ssh'
+      $sshkey_path             = 'C:\nagios\.ssh\known_hosts'
+      $local_user              = undef
+      $naginator_confdir       = 'C:\nagios'
+      $naginator_confdir_cyg   = '/cygdrive/c/nagios'
+      $naginator_confdir_mode  = undef
+      $config_file_mode        = undef
+      $config_file_loglevel    = 'debug'
+      $host_defaults           = { 'ensure' => 'present', 'target' => 'C:/nagios/nagios_host.cfg', 'loglevel' => 'debug' }
+      $service_defaults        = { 'ensure' => 'present', 'target' => 'C:/nagios/nagios_service.cfg', 'loglevel' => 'debug' }
+      $use_nrpe                = false
     }
     'linux': {
-      $environment            = undef
-      $exec_path              = undef
-      $ssh_confdir            = '/etc/nagios/.ssh'
-      $ssh_keygen_path        = '/usr/bin/ssh-keygen'
-      $sshkey_path            = undef
-      $local_user             = 'nagsync'
-      $naginator_confdir      = '/etc/nagios'
-      $naginator_confdir_mode = '0755'
-      $config_file_mode       = '0644'
-      $config_file_loglevel   = undef
-      $host_defaults          = { 'ensure' => 'present' }
-      $service_defaults       = { 'ensure' => 'present' }
-      $use_nrpe               = true
-      $sep                    = '/'
+      $remove_comments_command = "/bin/sed '/^#/ d' /etc/nagios/nagios_config_commented.cfg > /etc/nagios/nagios_config.cfg"
+      $config_file_commented   = '/etc/nagios/nagios_config_commented.cfg'
+      $config_file             = '/etc/nagios/nagios_config.cfg'
+      $keypath                 = '/etc/nagios/.ssh/id_rsa'
+      $rsync_source            = '/etc/nagios/nagios_config.cfg'
+      $rsync_keypath           = '/etc/nagios/.ssh/id_rsa'
+      $ssh_confdir             = '/etc/nagios/.ssh'
+      $sshkey_path             = undef
+      $local_user              = 'nagsync'
+      $naginator_confdir       = '/etc/nagios'
+      $naginator_confdir_cyg   = undef
+      $naginator_confdir_mode  = '0755'
+      $config_file_mode        = '0644'
+      $config_file_loglevel    = undef
+      $host_defaults           = { 'ensure' => 'present' }
+      $service_defaults        = { 'ensure' => 'present' }
+      $use_nrpe                = true
 
       case downcase($::osfamily) {
         'debian': {

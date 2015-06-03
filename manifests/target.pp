@@ -17,11 +17,13 @@
 #   rsync'ing.
 # @param use_nrpe [Boolean] Whether or not to configure nrpe on a target.
 # @param xfer_method [String] (rsync/storeconfig) How to transfer the Nagios config to the monitor.
+# @param cwrsync_version [String] The version of cwRsync to download
 #
 class nagios::target(
   $local_user       = $nagios::params::local_user,
   $use_nrpe         = $nagios::params::use_nrpe,
-  $xfer_method      = $nagios::params::xfer_method
+  $xfer_method      = $nagios::params::xfer_method,
+  $cwrsync_version  = $nagios::params::cwrsync_version,
 ) inherits nagios::params {
   validate_string($local_user)
   validate_bool($use_nrpe)
@@ -34,8 +36,6 @@ class nagios::target(
   $remote_user = $nagios::config::nagios_user
 
   $filebase_escaped      = regsubst($nagios::params::filebase, '\.', '_', 'G')
-  $config_file_commented = "${nagios::params::naginator_confdir}${nagios::params::sep}nagios_config_commented.cfg"
-  $config_file           = "${nagios::params::naginator_confdir}${nagios::params::sep}nagios_config.cfg"
 
   # Make sure that the nagios configurations are generated before concat
   # and rsync are used.
@@ -51,7 +51,8 @@ class nagios::target(
 
   case downcase($::kernel) {
     'linux': {
-      $remove_comments_command = "/bin/sed '/^#/ d' ${config_file_commented} > ${config_file}"
+      $exec_path   = [ '/bin', '/usr/bin' ]
+      $environment = undef
 
       user { $local_user:
         ensure => present,
@@ -59,7 +60,9 @@ class nagios::target(
       }
     }
     'windows': {
-      $remove_comments_command = "C:\\windows\\system32\\cmd.exe /c findstr /v /b /c:\"#\" ${config_file_commented} > ${config_file}"
+      $exec_path   = [ "${nagios::params::naginator_confdir}\\cwRsync_${cwrsync_version}_x86_Free", 'C:\windows', 'C:\windows\system32' ]
+      $environment = [ "CWRSYNCHOME=C:\\nagios\\cwRsync_${cwrsync_version}_x86_Free",
+                       'HOME=C:\nagios' ]
 
       exec { 'delete-nagios-config':
         command  => "C:\\windows\\system32\\cmd.exe /c del /q ${nagios::params::naginator_confdir}\\nagios_*",
@@ -101,7 +104,7 @@ class nagios::target(
 
   concat_file { 'nagios-config':
     tag            => 'nagios-config',
-    path           => $config_file_commented,
+    path           => $nagios::params::config_file_commented,
     owner          => $local_user,
     mode           => $nagios::params::config_file_mode,
     ensure_newline => true,
@@ -110,7 +113,7 @@ class nagios::target(
 
   # Remove headers from the final config
   exec { 'remove-headers-from-config':
-    command  => $remove_comments_command,
+    command  => $nagios::params::remove_comments_command,
     require  => Concat_file['nagios-config'],
     loglevel => 'debug',
   }
@@ -131,18 +134,24 @@ class nagios::target(
         target => $nagios::params::sshkey_path,
       }
 
-      include '::rsync'
+      class { '::rsync':
+        destination_directory => $nagios::params::naginator_confdir,
+        destination_zipped    => "cwRsync_${cwrsync_version}_x86_Free.zip",
+        destination_unzipped  => "cwRsync_${cwrsync_version}_x86_Free",
+        cwrsync_url           => "https://www.itefix.net/dl/cwRsync_${cwrsync_version}_x86_Free.zip"
+      }
 
       $type    = 'rsa'
       $bits    = '2048'
       $comment = 'Nagios SSH key'
-      $keypath = "${nagios::params::ssh_confdir}/id_rsa"
 
       exec { 'ssh-keygen-nagios':
-        command => "${nagios::params::ssh_keygen_path} -t ${type} -b ${bits} -f '${keypath}' -N '' -C '${comment}'",
+        command => "ssh-keygen -t ${type} -b ${bits} -f '${keypath}' -N '' -C '${comment}'",
+        path    => $exec_path,
         user    => $local_user,
-        creates => $keypath,
-        require => File[$nagios::params::ssh_confdir]
+        creates => $nagios::params::keypath,
+        require => [ File[$nagios::params::ssh_confdir],
+                     Class['::rsync'] ]
       }
 
       $rsync_dest = "${monitor_host}:${target_path}/${filebase_escaped}.cfg"
@@ -160,12 +169,12 @@ class nagios::target(
 
       # Transfer the configuration to the monitor.
       rsync::put { $rsync_dest:
-        environment => $nagios::params::environment,
-        exec_path   => $nagios::params::exec_path,
+        environment => $environment,
+        exec_path   => $exec_path,
         user        => $remote_user,
-        keyfile     => $keypath,
-        source      => $config_file,
-        subscribe   => Exec['remove-headers-from-config']
+        keyfile     => $nagios::params::rsync_keypath,
+        source      => $nagios::params::rsync_source,
+        require     => Exec['remove-headers-from-config']
       }
     }
     default: {
