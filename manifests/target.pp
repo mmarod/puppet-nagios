@@ -43,11 +43,11 @@ class nagios::target(
   Nagios_service<||> -> Concat_file<||> -> Rsync::Put<||>
 
   # Ensure that /etc/nagios or C:\nagios exist
-  file { $nagios::params::naginator_confdir:
+  file { [ $nagios::params::naginator_confdir, $nagios::params::ssh_confdir ]:
     ensure => directory,
     owner  => $local_user,
     mode   => $nagios::params::naginator_confdir_mode,
-  } -> Nagios_host <||> -> Nagios_service <||>
+  } -> Nagios_host <||> -> Nagios_service <||> -> Sshkey <||>
 
   case downcase($::kernel) {
     'linux': {
@@ -55,13 +55,6 @@ class nagios::target(
         ensure => present,
         before => File[$nagios::params::naginator_confdir]
       }
-
-      file { '/etc/nagios/.ssh':
-        ensure  => directory,
-        owner   => $local_user,
-        mode    => '0755',
-        require => [ File[$nagios::params::naginator_confdir], User[$local_user] ]
-      } -> Nagios_host <||> -> Nagios_service <||>
     }
     'windows': {
       exec { 'delete-nagios-config':
@@ -128,7 +121,9 @@ class nagios::target(
     }
     'rsync': {
       # Collect the monitor host key
-      Sshkey <<| tag == 'nagios-monitor-key' |>>
+      Sshkey <<| tag == 'nagios-monitor-key' |>> {
+        target => $nagios::params::sshkey_path,
+      }
 
       include '::rsync'
 
@@ -138,7 +133,7 @@ class nagios::target(
       $keypath = "${nagios::params::ssh_confdir}/id_rsa"
 
       exec { 'ssh-keygen-nagios':
-        command => "/usr/bin/ssh-keygen -t ${type} -b ${bits} -f '${keypath}' -N '' -C '${comment}'",
+        command => "${nagios::params::ssh_keygen_path} -t ${type} -b ${bits} -f '${keypath}' -N '' -C '${comment}'",
         user    => $local_user,
         creates => $keypath,
         require => File[$nagios::params::ssh_confdir]
@@ -159,10 +154,12 @@ class nagios::target(
 
       # Transfer the configuration to the monitor.
       rsync::put { $rsync_dest:
-        user      => $remote_user,
-        keyfile   => $keypath,
-        source    => $config_file,
-        subscribe => Concat[$config_file]
+        environment => $nagios::params::environment,
+        exec_path   => $nagios::params::exec_path,
+        user        => $remote_user,
+        keyfile     => $keypath,
+        source      => $config_file,
+        subscribe   => Concat[$config_file]
       }
     }
     default: {

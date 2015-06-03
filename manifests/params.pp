@@ -1,15 +1,22 @@
 # Params class
 #
 class nagios::params {
-  $ssh_confdir        = '/etc/nagios/.ssh'
   $plugin_mode        = '0755'
   $eventhandler_mode  = '0755'
   $nagios_user        = 'nagios'
   $nagios_group       = 'nagios'
+  $xfer_method        = 'rsync'
   $filebase           = $::clientcert
 
   case downcase($::kernel) {
     'windows': {
+      $environment            = [ 'NAGSYNCHOME=C:\nagios',
+                                  'CWRSYNCHOME=C:\nagios\cwrsync',
+                                  'HOME=C:\nagios' ]
+      $exec_path              = [ 'C:\nagios\cwrsync', 'C:\windows', 'C:\windows\system32' ]
+      $ssh_confdir            = 'C:\nagios\.ssh'
+      $ssh_keygen_path        = 'C:\nagios\cwrsync\ssh-keygen'
+      $sshkey_path            = 'C:\nagios\.ssh\known_hosts'
       $local_user             = undef
       $naginator_confdir      = 'C:\nagios'
       $naginator_confdir_mode = undef
@@ -17,13 +24,17 @@ class nagios::params {
       $config_file_loglevel   = 'debug'
       $host_defaults          = { 'ensure' => 'present', 'target' => 'C:/nagios/nagios_host.cfg', 'loglevel' => 'debug' }
       $service_defaults       = { 'ensure' => 'present', 'target' => 'C:/nagios/nagios_service.cfg', 'loglevel' => 'debug' }
-      $xfer_method            = 'storeconfig'
       $use_nrpe               = false
       # lint:ignore:double_quoted_strings
       $sep                    = "\\"
       # lint:endignore
     }
     'linux': {
+      $environment            = undef
+      $exec_path              = undef
+      $ssh_confdir            = '/etc/nagios/.ssh'
+      $ssh_keygen_path        = '/usr/bin/ssh-keygen'
+      $sshkey_path            = undef
       $local_user             = 'nagsync'
       $naginator_confdir      = '/etc/nagios'
       $naginator_confdir_mode = '0755'
@@ -31,7 +42,6 @@ class nagios::params {
       $config_file_loglevel   = undef
       $host_defaults          = { 'ensure' => 'present' }
       $service_defaults       = { 'ensure' => 'present' }
-      $xfer_method            = 'rsync'
       $use_nrpe               = true
       $sep                    = '/'
 
