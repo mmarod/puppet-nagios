@@ -159,7 +159,7 @@ class nagios::target(
                            Exec['transfer-config-to-nagios'] ]
         }
       } elsif downcase($::kernel) == 'linux' {
-        $rsync_onlyif          = "test `rsync --dry-run --itemize-changes ${rsync_onlyif_options} | wc -l` -gt 0",
+        $rsync_onlyif          = "test `rsync --dry-run --itemize-changes ${rsync_onlyif_options} | wc -l` -gt 0"
 
         ensure_packages( $nagios::params::target_packages,
           { 'before' => [ Exec['ssh-keygen-nagios'],
