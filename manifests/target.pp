@@ -65,7 +65,8 @@ class nagios::target(
                              'HOME=C:\nagios' ]
 
       exec { 'delete-nagios-config':
-        command  => "C:\\windows\\system32\\cmd.exe /c del /q ${nagios::params::naginator_confdir}\\nagios_*",
+        command  => "cmd.exe /c del /q ${nagios::params::naginator_confdir}\\nagios_*",
+        path     => $exec_path,
         require  => File[$nagios::params::naginator_confdir],
         loglevel => 'debug',
       } -> Nagios_host<||> -> Nagios_service<||>
@@ -143,8 +144,8 @@ class nagios::target(
         $destination_zipped    = "cwRsync_${cwrsync_version}_x86_Free.zip"
         $destination_unzipped  = "cwRsync_${cwrsync_version}_x86_Free"
         $cwrsync_url           = "https://www.itefix.net/dl/cwRsync_${cwrsync_version}_x86_Free.zip"
-        $rsync_onlyif          = "C:\\windows\\system32\\cmd.exe /c rsync --dry-run --itemize-changes ${rsync_onlyif_options} | find /v /c \"\""
-        $rsync_command         = "C:\\windows\\system32\\cmd.exe /c rsync -q ${rsync_options}"
+        $rsync_onlyif          = "cmd.exe /c rsync --dry-run --itemize-changes ${rsync_onlyif_options} | find /v /c \"\""
+        $rsync_command         = "cmd.exe /c rsync -q ${rsync_options}"
 
         download_file { 'download-cwrsync':
           url                   => $cwrsync_url,
