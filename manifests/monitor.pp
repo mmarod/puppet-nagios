@@ -54,6 +54,12 @@ class nagios::monitor(
 
   user { $nagios_user: ensure => present }
 
+  file { "/home/${local_user}/.ssh":
+    ensure  => directory,
+    owner   => $local_user,
+    require => User[$local_user],
+  }
+
   file { $nagios::params::files_to_purge:
     ensure  => absent,
     require => Package[$nagios::params::monitor_packages],
