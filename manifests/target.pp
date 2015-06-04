@@ -186,10 +186,11 @@ class nagios::target(
       $rsync_config = "-l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
 
       # Transfer the configuration to the monitor.
-      exec { "rsync -a -e 'ssh -i ${nagios::params::keypath} ${rsync_config}":
+      exec { 'transfer-config-to-nagios'
+        command     => "rsync -a -e \\'ssh -i ${nagios::params::keypath} -l ${local_user}\\' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg",
         environment => $environment,
         path        => $exec_path,
-        onlyif      => "test `rsync --dry-run --itemize-changes -a -e 'ssh -i ${nagios::params::test_keypath} ${rsync_config} | wc -l` -gt 0",
+        onlyif      => "test `rsync --dry-run --itemize-changes -a -e \\'ssh -i ${nagios::params::test_keypath} -l ${local_user}\\' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg | wc -l` -gt 0",
         require     => Exec['remove-headers-from-config']
       }
     }
