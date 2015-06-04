@@ -32,7 +32,7 @@ class nagios::monitor(
 
   $monitor_host = $nagios::config::monitor_host
   $target_path  = $nagios::config::target_path
-  $local_user   = $nagios::config::sync_user
+  $local_user   = $nagios::config::monitor_sync_user
   $nagios_user  = $nagios::config::nagios_user
   $nagios_group = $nagios::config::nagios_group
 

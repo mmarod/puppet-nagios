@@ -32,8 +32,8 @@ class nagios::target(
 
   $monitor_host = $nagios::config::monitor_host
   $target_path  = $nagios::config::target_path
-  $remote_user  = $nagios::config::sync_user
-  $local_user   = $nagios::config::sync_user
+  $remote_user  = $nagios::config::monitor_sync_user
+  $local_user   = $nagios::config::target_sync_user
 
   $filebase_escaped      = regsubst($nagios::params::filebase, '\.', '_', 'G')
 
@@ -134,8 +134,8 @@ class nagios::target(
         target => $nagios::params::sshkey_path,
       }
 
-      $rsync_options = "--no-perms --chmod=ug=rw,o-rwx -c -e 'ssh -i ${nagios::params::rsync_keypath} -l ${local_user}' ${nagios::params::rsync_source} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
-      $rsync_onlyif_options = "--no-perms --chmod=ug=rw,o-rwx -c -e 'ssh -i ${nagios::params::rsync_test_keypath} -l ${local_user}' ${nagios::params::rsync_source} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
+      $rsync_options = "--no-perms --chmod=ug=rw,o-rwx -c -e 'ssh -i ${nagios::params::rsync_keypath} -l ${remote_user}' ${nagios::params::rsync_source} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
+      $rsync_onlyif_options = "--no-perms --chmod=ug=rw,o-rwx -c -e 'ssh -i ${nagios::params::rsync_test_keypath} -l ${remote_user}' ${nagios::params::rsync_source} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
 
       # Ensure rsync exists
       if downcase($::kernel) == 'windows' {
