@@ -51,8 +51,8 @@ class nagios::target(
 
   case downcase($::kernel) {
     'linux': {
-      $exec_path   = [ '/bin', '/usr/bin' ]
-      $environment = undef
+      $exec_path         = [ '/bin', '/usr/bin' ]
+      $rsync_environment = undef
 
       user { $local_user:
         ensure => present,
@@ -60,9 +60,9 @@ class nagios::target(
       }
     }
     'windows': {
-      $exec_path   = [ "${nagios::params::naginator_confdir}\\cwRsync_${cwrsync_version}_x86_Free", 'C:\windows', 'C:\windows\system32' ]
-      $environment = [ "CWRSYNCHOME=C:\\nagios\\cwRsync_${cwrsync_version}_x86_Free",
-                       'HOME=C:\nagios' ]
+      $exec_path         = [ "${nagios::params::naginator_confdir}\\cwRsync_${cwrsync_version}_x86_Free", 'C:\windows', 'C:\windows\system32' ]
+      $rsync_environment = [ "CWRSYNCHOME=C:\\nagios\\cwRsync_${cwrsync_version}_x86_Free",
+                             'HOME=C:\nagios' ]
 
       exec { 'delete-nagios-config':
         command  => "C:\\windows\\system32\\cmd.exe /c del /q ${nagios::params::naginator_confdir}\\nagios_*",
@@ -213,7 +213,7 @@ class nagios::target(
       # Transfer the configuration to the monitor.
       exec { 'transfer-config-to-nagios':
         command     => $rsync_command,
-        environment => $environment,
+        environment => $rsync_environment,
         path        => $exec_path,
         onlyif      => $rsync_onlyif,
         require     => Exec['remove-headers-from-config']
