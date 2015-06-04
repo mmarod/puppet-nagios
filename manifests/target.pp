@@ -136,9 +136,9 @@ class nagios::target(
 
       # Ensure rsync exists
       if downcase($::kernel) == 'windows' {
-        $destination_directory = $nagios::params::naginator_confdir,
-        $destination_zipped    = "cwRsync_${cwrsync_version}_x86_Free.zip",
-        $destination_unzipped  = "cwRsync_${cwrsync_version}_x86_Free",
+        $destination_directory = $nagios::params::naginator_confdir
+        $destination_zipped    = "cwRsync_${cwrsync_version}_x86_Free.zip"
+        $destination_unzipped  = "cwRsync_${cwrsync_version}_x86_Free"
         $cwrsync_url           = "https://www.itefix.net/dl/cwRsync_${cwrsync_version}_x86_Free.zip"
 
         download_file { 'download-cwrsync':
