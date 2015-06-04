@@ -156,10 +156,11 @@ class nagios::target(
       # is a fact yet. It won't be on the first Puppet run.
       if $::nagios_key_exists == 'yes' {
         @@ssh_authorized_key { "${local_user}@${::clientcert}":
-          key  => $::nagios_key,
-          user => $remote_user,
-          type => 'ssh-rsa',
-          tag  => 'nagios-key',
+          key     => $::nagios_key,
+          user    => $remote_user,
+          type    => 'ssh-rsa',
+          tag     => 'nagios-key',
+          options => [ "command=\"rsync --server -vlogDtpre.iLsf . ${target_path}/${filebase_escaped}.cfg\"" ]
         }
       }
 
