@@ -173,8 +173,8 @@ class nagios::target(
         }
       }
 
-      if $::nagios_key_test_exists == 'yes' {
-        @@ssh_authorized_key { "${local_user}@${::clientcert}":
+      if $::nagios_test_key_exists == 'yes' {
+        @@ssh_authorized_key { "${local_user}test@${::clientcert}":
           key     => $::nagios_key_test,
           user    => $remote_user,
           type    => 'ssh-rsa',
