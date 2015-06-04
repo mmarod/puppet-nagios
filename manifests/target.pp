@@ -134,8 +134,8 @@ class nagios::target(
         target => $nagios::params::sshkey_path,
       }
 
-      $rsync_options = "-c -e 'ssh -i ${nagios::params::keypath} -l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
-      $rsync_onlyif_options = "-c -e 'ssh -i ${nagios::params::test_keypath} -l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
+      $rsync_options = "--no-perms --chmod=ug=rw -c -e 'ssh -i ${nagios::params::keypath} -l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
+      $rsync_onlyif_options = "--no-perms --chmod=ug=rw -c -e 'ssh -i ${nagios::params::test_keypath} -l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
 
       # Ensure rsync exists
       if downcase($::kernel) == 'windows' {
@@ -194,7 +194,7 @@ class nagios::target(
           user    => $remote_user,
           type    => 'ssh-rsa',
           tag     => 'nagios-key',
-          options => [ "command=\"rsync --server -ce.Lsf . ${target_path}/${filebase_escaped}.cfg\"" ]
+          options => [ "command=\"rsync --server -ce.Lsfx . ${target_path}/${filebase_escaped}.cfg\"" ]
         }
       }
 
@@ -204,7 +204,7 @@ class nagios::target(
           user    => $remote_user,
           type    => 'ssh-rsa',
           tag     => 'nagios-key',
-          options => [ "command=\"rsync --server -nce.Lsf --log-format=%i . ${target_path}/${filebase_escaped}.cfg\"" ]
+          options => [ "command=\"rsync --server -nce.Lsfx --log-format=%i . ${target_path}/${filebase_escaped}.cfg\"" ]
         }
       }
 
