@@ -20,7 +20,6 @@
 # @param cwrsync_version [String] The version of cwRsync to download
 #
 class nagios::target(
-  $local_user       = $nagios::params::local_user,
   $use_nrpe         = $nagios::params::use_nrpe,
   $xfer_method      = $nagios::params::xfer_method,
   $cwrsync_version  = $nagios::params::cwrsync_version,
@@ -32,8 +31,9 @@ class nagios::target(
   include nagios::config
 
   $monitor_host = $nagios::config::monitor_host
-  $target_path = $nagios::config::target_path
-  $remote_user = $nagios::config::nagios_user
+  $target_path  = $nagios::config::target_path
+  $remote_user  = $nagios::config::sync_user
+  $local_user   = $nagios::config::sync_user
 
   $filebase_escaped      = regsubst($nagios::params::filebase, '\.', '_', 'G')
 

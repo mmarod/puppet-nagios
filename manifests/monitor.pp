@@ -30,10 +30,11 @@ class nagios::monitor(
 
   include nagios::config
 
-  $monitor_host        = $nagios::config::monitor_host
-  $target_path         = $nagios::config::target_path
-  $nagios_user         = $nagios::config::nagios_user
-  $nagios_group        = $nagios::config::nagios_group
+  $monitor_host = $nagios::config::monitor_host
+  $target_path  = $nagios::config::target_path
+  $local_user   = $nagios::config::sync_user
+  $nagios_user  = $nagios::config::nagios_user
+  $nagios_group = $nagios::config::nagios_group
 
   $filebase_escaped = regsubst($nagios::params::filebase, '\.', '_', 'G')
   $config_file = "${target_path}/${filebase_escaped}.cfg"
@@ -43,6 +44,15 @@ class nagios::monitor(
   service { $nagios::params::nagios_service_name:
     ensure  => running,
   }
+
+  user { $local_user,
+    ensure         => present,
+    managehome     => true,
+    home           => "/home/${local_user}",
+    purge_ssh_keys => true,
+  } -> Ssh_authorized_key<||>
+
+  user { $nagios_user: ensure => present }
 
   file { $nagios::params::files_to_purge:
     ensure  => absent,
@@ -79,13 +89,6 @@ class nagios::monitor(
     require => [ File[$nagios::params::inotify_init], File[$nagios::params::inotify_script] ]
   }
 
-  user { $nagios_user:
-    ensure         => present,
-    managehome     => true,
-    home           => '/home/nagios',
-    purge_ssh_keys => true,
-  } -> Ssh_authorized_key<||>
-
   file { $nagios::params::naginator_confdir:
     ensure  => directory,
     owner   => $nagios_user,
@@ -100,15 +103,21 @@ class nagios::monitor(
         Nagios_contactgroup<||> ->
         Nagios_timeperiod<||>
 
-  file { $nagios::params::confdir:
+  # Sets /etc/nagios3/conf.d to rwxr-x--- nagios/nagsync
+  file { [ $nagios::params::conf_dir, $nagios::params::conf_d_dir ]:
     ensure  => directory,
     owner   => $nagios_user,
+    group   => $local_user,
+    mode    => '0750',
     require => Package[$nagios::params::monitor_packages]
   } ->
 
+  # Sets /etc/nagios3/conf.d/hosts to rwxr-s--- nagsync/nagios
   file { $target_path:
     ensure => directory,
-    owner  => $nagios_user,
+    owner  => $local_user,,
+    group  => $nagios_group,
+    mode   => '2750',
   }
 
   # Make sure that we are in the nagios-targets.txt file
@@ -144,7 +153,7 @@ class nagios::monitor(
     lens    => 'NagiosCfg.lns',
     changes => $aug_file['changes'],
     onlyif  => $aug_file['onlyif'],
-    require => File[$nagios::params::confdir]
+    require => File[$nagios::params::conf_d_dir]
   }
 
   # Take an array of cfg_dir names and turn them into something Augeas can understand.
@@ -155,7 +164,7 @@ class nagios::monitor(
     lens    => 'NagiosCfg.lns',
     changes => $aug_dir['changes'],
     onlyif  => $aug_dir['onlyif'],
-    require => File[$nagios::params::confdir]
+    require => File[$nagios::params::conf_d_dir]
   }
 
   # Takes a hash of changes to make and applies them with Augeas.
@@ -167,7 +176,7 @@ class nagios::monitor(
     incl    => $nagios::params::nagios_cfg_path,
     lens    => 'NagiosCfg.lns',
     changes => $changes,
-    require => File[$nagios::params::confdir]
+    require => File[$nagios::params::conf_d_dir]
   }
 
   # Ensure that all of these files exist before using Concat on them.
