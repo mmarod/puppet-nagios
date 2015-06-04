@@ -45,7 +45,7 @@ class nagios::monitor(
     ensure  => running,
   }
 
-  user { $local_user,
+  user { $local_user:
     ensure         => present,
     managehome     => true,
     home           => "/home/${local_user}",
