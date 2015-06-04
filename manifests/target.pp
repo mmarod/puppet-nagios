@@ -165,12 +165,9 @@ class nagios::target(
       }
 
       # Transfer the configuration to the monitor.
-      rsync::put { $rsync_dest:
+      exec { "rsync -av -e 'ssh -i ${nagios::params::keypath} -l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg":
         environment => $environment,
         exec_path   => $exec_path,
-        user        => $remote_user,
-        keyfile     => $nagios::params::rsync_keypath,
-        source      => $nagios::params::rsync_source,
         require     => Exec['remove-headers-from-config']
       }
     }
