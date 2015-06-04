@@ -25,7 +25,7 @@ class nagios::params {
       $rsync_test_keypath      = '/cygdrive/c/nagios/.ssh/id_rsa_test'
       $ssh_confdir             = 'C:\nagios\.ssh'
       $sshkey_path             = 'C:\nagios\.ssh\known_hosts'
-      $sync_user               = undef
+      $sync_user               = 'nagsync'
       $naginator_confdir       = 'C:\nagios'
       $naginator_confdir_cyg   = '/cygdrive/c/nagios'
       $naginator_confdir_mode  = undef
