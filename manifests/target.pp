@@ -134,12 +134,16 @@ class nagios::target(
         target => $nagios::params::sshkey_path,
       }
 
+      $rsync_options = "-c -e 'ssh -i ${nagios::params::keypath} -l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
+      $rsync_onlyif_options = "-c -e 'ssh -i ${nagios::params::test_keypath} -l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
+
       # Ensure rsync exists
       if downcase($::kernel) == 'windows' {
         $destination_directory = $nagios::params::naginator_confdir
         $destination_zipped    = "cwRsync_${cwrsync_version}_x86_Free.zip"
         $destination_unzipped  = "cwRsync_${cwrsync_version}_x86_Free"
         $cwrsync_url           = "https://www.itefix.net/dl/cwRsync_${cwrsync_version}_x86_Free.zip"
+        $rsync_onlyif          = "rsync --dry-run --itemize-changes ${rsync_onlyif_options} | find /v /c \"\""
 
         download_file { 'download-cwrsync':
           url                   => $cwrsync_url,
@@ -155,6 +159,8 @@ class nagios::target(
                            Exec['transfer-config-to-nagios'] ]
         }
       } elsif downcase($::kernel) == 'linux' {
+        $rsync_onlyif          = "test `rsync --dry-run --itemize-changes ${rsync_onlyif_options} | wc -l` -gt 0",
+
         ensure_packages( $nagios::params::target_packages,
           { 'before' => [ Exec['ssh-keygen-nagios'],
                           Exec['ssh-keygen-nagios-test'],
@@ -180,8 +186,6 @@ class nagios::target(
         require => File[$nagios::params::ssh_confdir],
       }
 
-      $rsync_dest = "${monitor_host}:${target_path}/${filebase_escaped}.cfg"
-
       # $::nagios_key_exists is used to determine whether or not $::nagios_key
       # is a fact yet. It won't be on the first Puppet run.
       if $::nagios_key_exists == 'yes' {
@@ -204,15 +208,12 @@ class nagios::target(
         }
       }
 
-      $rsync_options = "-c -e 'ssh -i ${nagios::params::keypath} -l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
-      $rsync_onlyif_options = "-c -e 'ssh -i ${nagios::params::test_keypath} -l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
-
       # Transfer the configuration to the monitor.
       exec { 'transfer-config-to-nagios':
         command     => "rsync -q ${rsync_options}",
         environment => $environment,
         path        => $exec_path,
-        onlyif      => "test `rsync --dry-run --itemize-changes ${rsync_onlyif_options} | wc -l` -gt 0",
+        onlyif      => $rsync_onlyif,
         require     => Exec['remove-headers-from-config']
       }
     }

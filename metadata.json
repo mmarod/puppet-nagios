@@ -9,7 +9,6 @@
   "issues_url": "https://github.com/mmarod/puppet-nagios/issues",
   "dependencies": [
     {"name":"puppetlabs/stdlib","version_requirement":"4.x"},
-    {"name":"puppetlabs/rsync","version_requirement":">=0.4.0"},
     {"name":"puppetlabs/concat","version_requirement":"2.x"}
   ],
   "requirements": [
