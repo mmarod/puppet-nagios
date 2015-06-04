@@ -156,9 +156,9 @@ class nagios::target(
         }
       } elsif downcase($::kernel) == 'linux' {
         ensure_packages( $nagios::params::target_packages,
-          'before' => [ Exec['ssh-keygen-nagios'],
-                        Exec['ssh-keygen-nagios-test'],
-                        Exec['transfer-config-to-nagios'] ]
+          { 'before' => [ Exec['ssh-keygen-nagios'],
+                          Exec['ssh-keygen-nagios-test'],
+                          Exec['transfer-config-to-nagios'] ] }
         )
       }
 
