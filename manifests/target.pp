@@ -190,7 +190,7 @@ class nagios::target(
           user    => $remote_user,
           type    => 'ssh-rsa',
           tag     => 'nagios-key',
-          options => [ "command=\"rsync --server -vlogDtpre.iLsf . ${target_path}/${filebase_escaped}.cfg\"" ]
+          options => [ "command=\"rsync --server -ce.Lsf . ${target_path}/${filebase_escaped}.cfg\"" ]
         }
       }
 
@@ -200,7 +200,7 @@ class nagios::target(
           user    => $remote_user,
           type    => 'ssh-rsa',
           tag     => 'nagios-key',
-          options => [ "command=\"rsync --server -nlogDtpre.iLsf --log-format=%i . ${target_path}/${filebase_escaped}.cfg\"" ]
+          options => [ "command=\"rsync --server -nce.Lsf --log-format=%i . ${target_path}/${filebase_escaped}.cfg\"" ]
         }
       }
 
