@@ -150,6 +150,15 @@ class nagios::target(
                      Class['::rsync'] ]
       }
 
+      exec { 'ssh-keygen-nagios-test':
+        command => "ssh-keygen -t ${nagios::params::ssh_key_type} -b ${nagios::params::ssh_key_bits} -f '${nagios::params::test_keypath}' -N '' -C '${nagios::params::test_ssh_key_comment}'",
+        path    => $exec_path,
+        user    => $local_user,
+        creates => $nagios::params::test_keypath,
+        require => [ File[$nagios::params::ssh_confdir],
+                     Class['::rsync'] ]
+      }
+
       $rsync_dest = "${monitor_host}:${target_path}/${filebase_escaped}.cfg"
 
       # $::nagios_key_exists is used to determine whether or not $::nagios_key
@@ -164,10 +173,23 @@ class nagios::target(
         }
       }
 
+      if $::nagios_key_test_exists == 'yes' {
+        @@ssh_authorized_key { "${local_user}@${::clientcert}":
+          key     => $::nagios_key_test,
+          user    => $remote_user,
+          type    => 'ssh-rsa',
+          tag     => 'nagios-key',
+          options => [ "command=\"rsync --server -nlogDtpre.iLsf --log-format=%i . ${target_path}/${filebase_escaped}.cfg\"" ]
+        }
+      }
+
+      $rsync_config = "rsync -av -e 'ssh -i ${nagios::params::keypath} -l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
+
       # Transfer the configuration to the monitor.
-      exec { "rsync -av -e 'ssh -i ${nagios::params::keypath} -l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg":
+      exec { "rsync -a -e 'ssh -i ${nagios::params::keypath} ${rsync_config}":
         environment => $environment,
         path        => $exec_path,
+        onlyif      => "test `rsync --dry-run --itemize-changes -a -e 'ssh -i ${nagios::params::test_keypath} ${rsync_config} | wc -l` -gt 0",
         require     => Exec['remove-headers-from-config']
       }
     }

@@ -1,16 +1,17 @@
 # Params class
 #
 class nagios::params {
-  $plugin_mode        = '0755'
-  $eventhandler_mode  = '0755'
-  $nagios_user        = 'nagios'
-  $nagios_group       = 'nagios'
-  $xfer_method        = 'rsync'
-  $filebase           = $::clientcert
-  $cwrsync_version    = '5.4.1'
-  $ssh_key_type       = 'rsa'
-  $ssh_key_bits       = '2048'
-  $ssh_key_comment    = 'Nagios SSH key'
+  $plugin_mode          = '0755'
+  $eventhandler_mode    = '0755'
+  $nagios_user          = 'nagios'
+  $nagios_group         = 'nagios'
+  $xfer_method          = 'rsync'
+  $filebase             = $::clientcert
+  $cwrsync_version      = '5.4.1'
+  $ssh_key_type         = 'rsa'
+  $ssh_key_bits         = '2048'
+  $ssh_key_comment      = 'Nagios SSH key'
+  $test_ssh_key_comment = 'Test Nagios SSH key'
 
   case downcase($::kernel) {
     'windows': {
@@ -18,8 +19,10 @@ class nagios::params {
       $config_file_commented   = 'C:\nagios\nagios_config_commented.cfg'
       $config_file             = 'C:\nagios\nagios_config.cfg'
       $keypath                 = 'C:\nagios\.ssh\id_rsa'
+      $test_keypath            = 'C:\nagios\.ssh\id_rsa_test'
       $rsync_source            = '/cygdrive/c/nagios/nagios_config.cfg'
       $rsync_keypath           = '/cygdrive/c/nagios/.ssh/id_rsa'
+      $rsync_test_keypath      = '/cygdrive/c/nagios/.ssh/id_rsa_test'
       $ssh_confdir             = 'C:\nagios\.ssh'
       $sshkey_path             = 'C:\nagios\.ssh\known_hosts'
       $local_user              = undef
@@ -37,8 +40,10 @@ class nagios::params {
       $config_file_commented   = '/etc/nagios/nagios_config_commented.cfg'
       $config_file             = '/etc/nagios/nagios_config.cfg'
       $keypath                 = '/etc/nagios/.ssh/id_rsa'
+      $test_keypath            = '/etc/nagios/.ssh/id_rsa_test'
       $rsync_source            = '/etc/nagios/nagios_config.cfg'
       $rsync_keypath           = '/etc/nagios/.ssh/id_rsa'
+      $rsync_test_keypath      = '/etc/nagios/.ssh/id_rsa_test'
       $ssh_confdir             = '/etc/nagios/.ssh'
       $sshkey_path             = undef
       $local_user              = 'nagsync'
