@@ -134,8 +134,8 @@ class nagios::target(
         target => $nagios::params::sshkey_path,
       }
 
-      $rsync_options = "--no-perms --chmod=ug=rw -c -e 'ssh -i ${nagios::params::keypath} -l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
-      $rsync_onlyif_options = "--no-perms --chmod=ug=rw -c -e 'ssh -i ${nagios::params::test_keypath} -l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
+      $rsync_options = "--no-perms --chmod=ug=rw,o-rwx -c -e 'ssh -i ${nagios::params::keypath} -l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
+      $rsync_onlyif_options = "--no-perms --chmod=ug=rw,o-rwx -c -e 'ssh -i ${nagios::params::test_keypath} -l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
 
       # Ensure rsync exists
       if downcase($::kernel) == 'windows' {
