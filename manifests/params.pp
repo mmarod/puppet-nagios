@@ -73,7 +73,7 @@ class nagios::params {
           $nagios_service_name  = 'nagios3'
           $cfg_files            = []
           $cfg_dirs             = [ '/etc/nagios-plugins/config', '/etc/nagios3/conf.d' ]
-          $monitor_packages     = [ 'nagios', 'nagios-plugins', 'screen', 'inotify-tools', 'rsync', 'openssh-client', 'openssh-server' ]
+          $monitor_packages     = [ 'nagios3', 'nagios-plugins', 'screen', 'inotify-tools', 'rsync', 'openssh-client', 'openssh-server' ]
           $target_packages      = [ 'rsync', 'openssh-client' ]
           $config_command       = '/etc/nagios3/conf.d/commands.cfg'
           $config_servicegroup  = '/etc/nagios3/conf.d/servicegroups.cfg'
