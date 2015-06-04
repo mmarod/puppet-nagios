@@ -12,7 +12,7 @@ class nagios::params {
   $ssh_key_bits         = '2048'
   $ssh_key_comment      = 'Nagios SSH key'
   $test_ssh_key_comment = 'Test Nagios SSH key'
-  $monitor_sync_user       = 'nagsync',
+  $monitor_sync_user    = 'nagsync'
 
   case downcase($::kernel) {
     'windows': {
@@ -26,7 +26,7 @@ class nagios::params {
       $rsync_test_keypath      = '/cygdrive/c/nagios/.ssh/id_rsa_test'
       $ssh_confdir             = 'C:\nagios\.ssh'
       $sshkey_path             = 'C:\nagios\.ssh\known_hosts'
-      $target_sync_user        = undef,
+      $target_sync_user        = undef
       $naginator_confdir       = 'C:\nagios'
       $naginator_confdir_cyg   = '/cygdrive/c/nagios'
       $naginator_confdir_mode  = undef
