@@ -19,6 +19,7 @@ class nagios::config (
   $target_path      = '/etc/nagios3/conf.d/hosts',
   $nagios_user      = $nagios::params::nagios_user,
   $nagios_group     = $nagios::params::nagios_group,
+  $sync_user        = $nagios::params::sync_user,
 ) inherits nagios::params {
   validate_string($monitor_host)
   validate_absolute_path($target_path)

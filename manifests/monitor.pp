@@ -115,7 +115,7 @@ class nagios::monitor(
   # Sets /etc/nagios3/conf.d/hosts to rwxr-s--- nagsync/nagios
   file { $target_path:
     ensure => directory,
-    owner  => $local_user,,
+    owner  => $local_user,
     group  => $nagios_group,
     mode   => '2750',
   }

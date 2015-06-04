@@ -24,9 +24,9 @@ class nagios::target(
   $xfer_method      = $nagios::params::xfer_method,
   $cwrsync_version  = $nagios::params::cwrsync_version,
 ) inherits nagios::params {
-  validate_string($local_user)
   validate_bool($use_nrpe)
   validate_string($xfer_method)
+  validate_string($cwrsync_version)
 
   include nagios::config
 
