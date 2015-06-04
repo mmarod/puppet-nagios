@@ -143,7 +143,8 @@ class nagios::target(
         $destination_zipped    = "cwRsync_${cwrsync_version}_x86_Free.zip"
         $destination_unzipped  = "cwRsync_${cwrsync_version}_x86_Free"
         $cwrsync_url           = "https://www.itefix.net/dl/cwRsync_${cwrsync_version}_x86_Free.zip"
-        $rsync_onlyif          = "rsync --dry-run --itemize-changes ${rsync_onlyif_options} | find /v /c \"\""
+        $rsync_onlyif          = "C:\\windows\\system32\\cmd.exe /c rsync --dry-run --itemize-changes ${rsync_onlyif_options} | find /v /c \"\""
+        $rsync_command         = "C:\\windows\\system32\\cmd.exe /c rsync -q ${rsync_options}"
 
         download_file { 'download-cwrsync':
           url                   => $cwrsync_url,
@@ -160,6 +161,7 @@ class nagios::target(
         }
       } elsif downcase($::kernel) == 'linux' {
         $rsync_onlyif          = "test `rsync --dry-run --itemize-changes ${rsync_onlyif_options} | wc -l` -gt 0"
+        $rsync_command         = "rsync -q ${rsync_options}"
 
         ensure_packages( $nagios::params::target_packages,
           { 'before' => [ Exec['ssh-keygen-nagios'],
@@ -210,7 +212,7 @@ class nagios::target(
 
       # Transfer the configuration to the monitor.
       exec { 'transfer-config-to-nagios':
-        command     => "rsync -q ${rsync_options}",
+        command     => $rsync_command,
         environment => $environment,
         path        => $exec_path,
         onlyif      => $rsync_onlyif,
