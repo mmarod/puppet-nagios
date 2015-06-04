@@ -134,11 +134,32 @@ class nagios::target(
         target => $nagios::params::sshkey_path,
       }
 
-      class { '::rsync':
-        destination_directory => $nagios::params::naginator_confdir,
-        destination_zipped    => "cwRsync_${cwrsync_version}_x86_Free.zip",
-        destination_unzipped  => "cwRsync_${cwrsync_version}_x86_Free",
-        cwrsync_url           => "https://www.itefix.net/dl/cwRsync_${cwrsync_version}_x86_Free.zip"
+      # Ensure rsync exists
+      if downcase($::kernel) == 'windows' {
+        $destination_directory = $nagios::params::naginator_confdir,
+        $destination_zipped    = "cwRsync_${cwrsync_version}_x86_Free.zip",
+        $destination_unzipped  = "cwRsync_${cwrsync_version}_x86_Free",
+        $cwrsync_url           = "https://www.itefix.net/dl/cwRsync_${cwrsync_version}_x86_Free.zip"
+
+        download_file { 'download-cwrsync':
+          url                   => $cwrsync_url,
+          destination_directory => $destination_directory,
+          proxyAddress          => $proxyAddress,
+        } ->
+
+        windows::unzip { "${destination_directory}\\${destination_zipped}":
+          destination => $destination_directory,
+          creates     => "${destination_directory}\\${destination_unzipped}",
+          before      => [ Exec['ssh-keygen-nagios'],
+                           Exec['ssh-keygen-nagios-test'],
+                           Exec['transfer-config-to-nagios'] ]
+        }
+      } elsif downcase($::kernel) == 'linux' {
+        ensure_packages { $nagios::params::target_packages,
+          'before' => [ Exec['ssh-keygen-nagios'],
+                        Exec['ssh-keygen-nagios-test'],
+                        Exec['transfer-config-to-nagios'] ]
+        }
       }
 
       exec { 'ssh-keygen-nagios':
@@ -146,8 +167,8 @@ class nagios::target(
         path    => $exec_path,
         user    => $local_user,
         creates => $nagios::params::keypath,
-        require => [ File[$nagios::params::ssh_confdir],
-                     Class['::rsync'] ]
+        before  => Exec['transfer-config-to-nagios'],
+        require => File[$nagios::params::ssh_confdir],
       }
 
       exec { 'ssh-keygen-nagios-test':
@@ -155,8 +176,8 @@ class nagios::target(
         path    => $exec_path,
         user    => $local_user,
         creates => $nagios::params::test_keypath,
-        require => [ File[$nagios::params::ssh_confdir],
-                     Class['::rsync'] ]
+        before  => Exec['transfer-config-to-nagios'],
+        require => File[$nagios::params::ssh_confdir],
       }
 
       $rsync_dest = "${monitor_host}:${target_path}/${filebase_escaped}.cfg"
@@ -183,14 +204,15 @@ class nagios::target(
         }
       }
 
-      $rsync_config = "-l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
+      $rsync_options = "-c -e 'ssh -i ${nagios::params::keypath} -l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
+      $rsync_onlyif_options = "-c -e 'ssh -i ${nagios::params::test_keypath} -l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
 
       # Transfer the configuration to the monitor.
       exec { 'transfer-config-to-nagios':
-        command     => "rsync -a -e \\'ssh -i ${nagios::params::keypath} -l ${local_user}\\' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg",
+        command     => "rsync -q ${rsync_options}",
         environment => $environment,
         path        => $exec_path,
-        onlyif      => "test `rsync --dry-run --itemize-changes -a -e \\'ssh -i ${nagios::params::test_keypath} -l ${local_user}\\' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg | wc -l` -gt 0",
+        onlyif      => "test `rsync --dry-run --itemize-changes ${rsync_onlyif_options} | wc -l` -gt 0",
         require     => Exec['remove-headers-from-config']
       }
     }

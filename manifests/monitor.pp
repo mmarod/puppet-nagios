@@ -18,19 +18,15 @@
 # @param cfg_files [Array] A list of cfg_files to include in nagios.cfg.
 # @param cfg_dirs [Array] A list of cfg_dirs to include in nagios.cfg.
 # @param cfg_extra [Hash] A hash of key/value pairs to set options with in nagios.cfg.
-# @param manage_firewall [Boolean] Whether or not to open port 873 for the rsync
-#   server on the monitor.
 #
 class nagios::monitor(
   $cfg_files           = $nagios::params::cfg_files,
   $cfg_dirs            = $nagios::params::cfg_dirs,
   $cfg_extra           = {},
-  $manage_firewall     = false,
 ) inherits nagios::params {
   validate_array($cfg_files)
   validate_array($cfg_dirs)
   validate_hash($cfg_extra)
-  validate_bool($manage_firewall)
 
   include nagios::config
 
@@ -42,7 +38,7 @@ class nagios::monitor(
   $filebase_escaped = regsubst($nagios::params::filebase, '\.', '_', 'G')
   $config_file = "${target_path}/${filebase_escaped}.cfg"
 
-  ensure_packages($nagios::params::packages)
+  ensure_packages($nagios::params::monitor_packages)
 
   service { $nagios::params::nagios_service_name:
     ensure  => running,
@@ -50,7 +46,7 @@ class nagios::monitor(
 
   file { $nagios::params::files_to_purge:
     ensure  => absent,
-    require => Package[$nagios::params::packages],
+    require => Package[$nagios::params::monitor_packages],
     notify  => Service[$nagios::params::nagios_service_name]
   }
 
@@ -107,7 +103,7 @@ class nagios::monitor(
   file { $nagios::params::confdir:
     ensure  => directory,
     owner   => $nagios_user,
-    require => Package[$nagios::params::packages]
+    require => Package[$nagios::params::monitor_packages]
   } ->
 
   file { $target_path:
@@ -458,22 +454,6 @@ class nagios::monitor(
 
   # Collect SSH keys from targets for rsync usage
   Ssh_authorized_key <<| tag == 'nagios-key' |>>
-
-  include rsync::server
-
-  rsync::server::module { 'nagios':
-    path    => $target_path,
-    require => Package[$nagios::params::packages]
-  }
-
-  if $manage_firewall {
-    firewall { '200 Allow rsync access for Nagios':
-      chain  => 'INPUT',
-      proto  => 'tcp',
-      dport  => '873',
-      action => 'accept'
-    }
-  }
 
   # Distribute the monitor host key to targets
   @@sshkey { $monitor_host:
