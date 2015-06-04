@@ -186,7 +186,7 @@ class nagios::target(
       $rsync_config = "-l ${local_user}' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
 
       # Transfer the configuration to the monitor.
-      exec { 'transfer-config-to-nagios'
+      exec { 'transfer-config-to-nagios':
         command     => "rsync -a -e \\'ssh -i ${nagios::params::keypath} -l ${local_user}\\' ${nagios::params::config_file} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg",
         environment => $environment,
         path        => $exec_path,
