@@ -24,7 +24,7 @@ Facter.add('nagios_key') do
     end
 
     if File.exist?(keypath)
-      id_rsa_pub = File.read('C:\nagios\.ssh\id_rsa.pub')
+      id_rsa_pub = File.read(keypath)
       nagios_key = id_rsa_pub.split(' ')[1]
     else
       nagios_key = ''
