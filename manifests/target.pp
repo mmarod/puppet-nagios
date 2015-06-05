@@ -38,8 +38,8 @@ class nagios::target(
 
   # Make sure that the nagios configurations are generated before concat
   # and rsync are used.
-  Nagios_host<||>    -> Concat_file<||> -> Rsync::Put<||>
-  Nagios_service<||> -> Concat_file<||> -> Rsync::Put<||>
+  Nagios_host<||>    -> Concat_file<||>
+  Nagios_service<||> -> Concat_file<||>
 
   # Ensure that /etc/nagios or C:\nagios exist
   file { [ $nagios::params::naginator_confdir, $nagios::params::ssh_confdir ]:
