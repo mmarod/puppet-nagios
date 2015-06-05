@@ -159,7 +159,7 @@ class nagios::monitor(
     lens    => 'NagiosCfg.lns',
     changes => $aug_file['changes'],
     onlyif  => $aug_file['onlyif'],
-    require => File[$nagios::params::conf_d_dir]
+    require => File[$nagios::params::conf_dir]
   }
 
   # Take an array of cfg_dir names and turn them into something Augeas can understand.
@@ -170,7 +170,7 @@ class nagios::monitor(
     lens    => 'NagiosCfg.lns',
     changes => $aug_dir['changes'],
     onlyif  => $aug_dir['onlyif'],
-    require => File[$nagios::params::conf_d_dir]
+    require => File[$nagios::params::conf_dir]
   }
 
   # Takes a hash of changes to make and applies them with Augeas.
@@ -182,7 +182,7 @@ class nagios::monitor(
     incl    => $nagios::params::nagios_cfg_path,
     lens    => 'NagiosCfg.lns',
     changes => $changes,
-    require => File[$nagios::params::conf_d_dir]
+    require => File[$nagios::params::conf_dir]
   }
 
   # Ensure that all of these files exist before using Concat on them.
