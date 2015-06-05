@@ -6,7 +6,6 @@ class nagios::params {
   $nagios_user          = 'nagios'
   $nagios_group         = 'nagios'
   $xfer_method          = 'rsync'
-  $filebase             = $::clientcert
   $cwrsync_version      = '5.4.1'
   $ssh_key_type         = 'rsa'
   $ssh_key_bits         = '2048'

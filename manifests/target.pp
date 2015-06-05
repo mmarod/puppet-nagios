@@ -34,8 +34,7 @@ class nagios::target(
   $target_path  = $nagios::config::target_path
   $remote_user  = $nagios::config::monitor_sync_user
   $local_user   = $nagios::config::target_sync_user
-
-  $filebase_escaped      = regsubst($nagios::params::filebase, '\.', '_', 'G')
+  $filebase     = regsubst($::clientcert, '\.', '_', 'G')
 
   # Make sure that the nagios configurations are generated before concat
   # and rsync are used.
@@ -85,9 +84,9 @@ class nagios::target(
   create_resources('nagios_service',  $services, $nagios::params::service_defaults)
 
   # Send our config filename to the monitor so our configuration is not purged.
-  @@concat_fragment { "nagios_target_${filebase_escaped}":
+  @@concat_fragment { "nagios_target_${filebase}":
     tag     => 'nagios-targets',
-    content => "${filebase_escaped}.cfg",
+    content => "${filebase}.cfg",
   }
 
   # Merge host and service configuration into a single file.
@@ -122,7 +121,7 @@ class nagios::target(
   case $xfer_method {
     'storeconfig': {
       # Creates an exported file for collection on the monitor.
-      @@file { "${target_path}/${filebase_escaped}.cfg":
+      @@file { "${target_path}/${filebase}.cfg":
         tag     => 'nagios-config',
         owner   => $remote_user,
         mode    => '0644',
@@ -135,8 +134,8 @@ class nagios::target(
         target => $nagios::params::sshkey_path,
       }
 
-      $rsync_options = "--no-perms --chmod=ug=rw,o-rwx -c -e 'ssh -i ${nagios::params::rsync_keypath} -l ${remote_user}' ${nagios::params::rsync_source} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
-      $rsync_onlyif_options = "--no-perms --chmod=ug=rw,o-rwx -c -e 'ssh -i ${nagios::params::rsync_test_keypath} -l ${remote_user}' ${nagios::params::rsync_source} ${remote_user}@${monitor_host}:${target_path}/${filebase_escaped}.cfg"
+      $rsync_options = "--no-perms --chmod=ug=rw,o-rwx -c -e 'ssh -i ${nagios::params::rsync_keypath} -l ${remote_user}' ${nagios::params::rsync_source} ${remote_user}@${monitor_host}:${target_path}/${filebase}.cfg"
+      $rsync_onlyif_options = "--no-perms --chmod=ug=rw,o-rwx -c -e 'ssh -i ${nagios::params::rsync_test_keypath} -l ${remote_user}' ${nagios::params::rsync_source} ${remote_user}@${monitor_host}:${target_path}/${filebase}.cfg"
 
       # Ensure rsync exists
       if downcase($::kernel) == 'windows' {
@@ -197,7 +196,7 @@ class nagios::target(
           user    => $remote_user,
           type    => 'ssh-rsa',
           tag     => 'nagios-key',
-          options => [ "command=\"rsync --server -ce.Lsfx . ${target_path}/${filebase_escaped}.cfg\"" ]
+          options => [ "command=\"rsync --server -ce.Lsfx . ${target_path}/${filebase}.cfg\"" ]
         }
       }
 
@@ -207,7 +206,7 @@ class nagios::target(
           user    => $remote_user,
           type    => 'ssh-rsa',
           tag     => 'nagios-key',
-          options => [ "command=\"rsync --server -nce.Lsfx --log-format=%i . ${target_path}/${filebase_escaped}.cfg\"" ]
+          options => [ "command=\"rsync --server -nce.Lsfx --log-format=%i . ${target_path}/${filebase}.cfg\"" ]
         }
       }
 

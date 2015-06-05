@@ -35,9 +35,8 @@ class nagios::monitor(
   $local_user   = $nagios::config::monitor_sync_user
   $nagios_user  = $nagios::config::nagios_user
   $nagios_group = $nagios::config::nagios_group
-
-  $filebase_escaped = regsubst($nagios::params::filebase, '\.', '_', 'G')
-  $config_file = "${target_path}/${filebase_escaped}.cfg"
+  $filebase     = regsubst($::clientcert, '\.', '_', 'G')
+  $config_file  = "${target_path}/${filebase}.cfg"
 
   ensure_packages($nagios::params::monitor_packages)
 
@@ -127,9 +126,9 @@ class nagios::monitor(
   }
 
   # Make sure that we are in the nagios-targets.txt file
-  @@concat_fragment { "nagios_target_${filebase_escaped}":
+  @@concat_fragment { "nagios_target_${filebase}":
     tag     => 'nagios-targets',
-    content => "${filebase_escaped}.cfg",
+    content => "${filebase}.cfg",
   }
 
   # Collect all of the configs with xfer_method set to storeconfig
