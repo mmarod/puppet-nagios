@@ -11,16 +11,13 @@ fi
 while inotifywait -q --exclude '\.(cfg\.|swx|swp)' --timefmt '%m-%d-%y %H:%M:%S' --format '[%T] %:e %f' -e modify,moved_to,create,delete <%= @target_path -%> | tee >(awk '{print $3 " " $4}' | $inotify_script > /dev/null 2>&1); do
   ds=$(date +'%m-%d-%y %H:%M:%S')
 
-  tmpfile=`mktemp`
-
   # Check if the configuration is valid
-  <%= @nagios_binary -%> -v <%= @nagios_cfg_path -%> > $tmpfile 2>&1
+  error=`<%= @nagios_binary -%> -v <%= @nagios_cfg_path -%> | egrep '^Error:'`
   retval=$?
   
-  if [ $retval -ne 0 ]; then
-    egrep '^Error' $tmpfile | tee >(awk -v ds="$ds" '{print "["ds"]", $0'}) >($inotify_script > /dev/null 2>&1) > /dev/null 2>&1
+  if [ $retval -eq 0 ]; then
+    echo $error | tee >(awk -v ds="$ds" '{print "["ds"]", $0'}) >($inotify_script > /dev/null 2>&1) > /dev/null 2>&1
   else
     service <%= @nagios_service_name -%> reload 2>&1 | tee >(awk -v ds="$ds" '{print "["ds"]", $0}') >($inotify_script >/dev/null 2>&1) > /dev/null 2>&1
   fi
-  rm $tmpfile
 done;
