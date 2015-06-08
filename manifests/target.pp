@@ -13,28 +13,27 @@
 #     monitor_host    => 'nagios.example.com'
 #   }
 #
-# @param local_user [String] The local user created on a target to use for
-#   rsync'ing.
 # @param use_nrpe [Boolean] Whether or not to configure nrpe on a target.
 # @param xfer_method [String] (rsync/storeconfig) How to transfer the Nagios config to the monitor.
-# @param cwrsync_version [String] The version of cwRsync to download
 #
-class nagios::target(
-  $use_nrpe         = $nagios::params::use_nrpe,
-  $xfer_method      = $nagios::params::xfer_method,
-  $cwrsync_version  = $nagios::params::cwrsync_version,
-  $proxyAddress     = undef,$nagios::params::cwrsync_version,
+class nagios::target (
+  $use_nrpe        = $nagios::params::use_nrpe,
+  $xfer_method     = $nagios::params::xfer_method
 ) inherits nagios::params {
   validate_bool($use_nrpe)
   validate_string($xfer_method)
-  validate_string($cwrsync_version)
 
   include nagios::config
 
-  $monitor_host = $nagios::config::monitor_host
-  $target_path  = $nagios::config::target_path
-  $remote_user  = $nagios::config::monitor_sync_user
-  $local_user   = $nagios::config::target_sync_user
+  # Grab variables from nagios::config class
+  $monitor_host    = $nagios::config::monitor_host
+  $target_path     = $nagios::config::target_path
+  $remote_user     = $nagios::config::monitor_sync_user
+  $local_user      = $nagios::config::target_sync_user
+  $cwrsync_version = $nagios::config::cwrsync_version
+  $proxyAddress    = $nagios::config::proxyAddress
+
+  # Escape the clientcert to create a unique filename
   $filebase     = regsubst($::clientcert, '\.', '_', 'G')
 
   # Make sure that the nagios configurations are generated before concat
@@ -43,11 +42,11 @@ class nagios::target(
   Nagios_service<||> -> Concat_file<||>
 
   # Ensure that /etc/nagios or C:\nagios exist
-  file { [ $nagios::params::naginator_confdir, $nagios::params::ssh_confdir ]:
+  file { $nagios::params::naginator_confdir:
     ensure => directory,
     owner  => $local_user,
     mode   => $nagios::params::naginator_confdir_mode,
-  } -> Nagios_host <||> -> Nagios_service <||> -> Sshkey <||>
+  } -> Nagios_host <||> -> Nagios_service <||>
 
   case downcase($::kernel) {
     'linux': {
@@ -129,6 +128,14 @@ class nagios::target(
       }
     }
     'rsync': {
+      # Ensure that /etc/nagios/.ssh or C:\nagios\.ssh exist
+      file { $nagios::params::ssh_confdir:
+        ensure  => directory,
+        owner   => $local_user,
+        mode    => $nagios::params::naginator_confdir_mode,
+        require => File[$nagios::params::naginator_confdir]
+      } -> Sshkey <||>
+
       # Collect the monitor host key
       Sshkey <<| tag == 'nagios-monitor-key' |>> {
         target => $nagios::params::sshkey_path,
@@ -155,7 +162,8 @@ class nagios::target(
         windows::unzip { "${destination_directory}\\${destination_zipped}":
           destination => $destination_directory,
           creates     => "${destination_directory}\\${destination_unzipped}",
-          before      => [ Exec['ssh-keygen-nagios'], Exec['ssh-keygen-nagios-test'], Exec['transfer-config-to-nagios'] ]
+          before      => [ Exec['ssh-keygen-nagios'], Exec['ssh-keygen-nagios-test'], Exec['transfer-config-to-nagios'] ],
+          require     => Download_file['download-cwrsync']
         }
       } elsif downcase($::kernel) == 'linux' {
         $rsync_onlyif          = "test `rsync --dry-run --itemize-changes ${rsync_onlyif_options} | wc -l` -gt 0"

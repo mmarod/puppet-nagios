@@ -9,7 +9,10 @@ RSpec.configure do |c|
   c.augeas_fixtures = File.join(fixture_path, 'augeas')
   c.module_path = File.join(fixture_path, 'modules')
   c.manifest_dir = File.join(fixture_path, 'manifests')
-  c.before :each do
-    HieraPuppet.instance_variable_set('@hiera', nil) if defined? HieraPuppet
-  end
+  c.default_facts = {
+    :hostname       => 'foo',
+    :ipaddress      => '1.2.3.4',
+    :clientcert     => 'foo.example.com',
+    :concat_basedir => '/var/lib/puppet/concat'
+  }
 end

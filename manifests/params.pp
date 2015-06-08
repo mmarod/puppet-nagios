@@ -63,6 +63,7 @@ class nagios::params {
           $nagios_service_name  = 'nagios3'
           $cfg_files            = []
           $cfg_dirs             = [ '/etc/nagios-plugins/config', '/etc/nagios3/conf.d' ]
+          $cfg_extra            = {}
           $monitor_packages     = [ 'nagios3', 'nagios-plugins', 'screen', 'inotify-tools', 'rsync', 'openssh-client', 'openssh-server' ]
           $target_packages      = [ 'rsync', 'openssh-client' ]
           $config_command       = '/etc/nagios3/conf.d/commands.cfg'
@@ -103,6 +104,7 @@ class nagios::params {
           $nagios_service_name  = 'nagios'
           $cfg_files            = []
           $cfg_dirs             = [ '/etc/nagios-plugins/config', '/etc/nagios/conf.d' ]
+          $cfg_extra            = {}
           $monitor_packages     = [ 'nagios', 'nagios-plugins', 'screen', 'inotify-tools', 'rsync', 'openssh-clients', 'openssh-server' ]
           $target_packages      = [ 'rsync', 'openssh-clients' ]
           $config_command       = '/etc/nagios/conf.d/commands.cfg'
@@ -141,6 +143,7 @@ class nagios::params {
   $ssh_key_comment       = 'Nagios SSH key'
   $test_ssh_key_comment  = 'Test Nagios SSH key'
   $monitor_sync_user     = 'nagsync'
+  $target_path           = '/etc/nagios3/conf.d/hosts'
 
   $default_commands      = { 'notify-host-by-email' => {
                                'command_line' => '/usr/bin/printf "%b" "***** Nagios *****\n\nNotification Type: $NOTIFICATIONTYPE$\nHost: $HOSTNAME$\nState: $HOSTSTATE$\nAddress: $HOSTADDRESS$\nInfo: $HOSTOUTPUT$\n\nDate/Time: $LONGDATETIME$\n" | /usr/bin/mail -s "** $NOTIFICATIONTYPE$ Host Alert: $HOSTNAME$ is $HOSTSTATE$ **" $CONTACTEMAIL$' },

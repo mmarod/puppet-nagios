@@ -1,5 +1,13 @@
 ---
 nagios::config::monitor_host: nagios.example.com
+nagios::config::cfg_files:
+  - /etc/nagios3/some.cfg
+  - /etc/nagios3/someother.cfg
+nagios::config::cfg_dirs:
+  - /etc/nagios3/somedir
+  - /etc/nagios3/someotherdir
+nagios::config::cfg_extra:
+  log_file: /path/to/nagios.log
 nagios_plugins:
   testplugin:
     content: moo
@@ -12,14 +20,6 @@ nagios_servicegroups:
   testservicegroup: {}
 nagios_contacts:
   testcontact: {}
-nagios::monitor::cfg_files:
-  - /etc/nagios3/some.cfg
-  - /etc/nagios3/someother.cfg
-nagios::monitor::cfg_dirs:
-  - /etc/nagios3/somedir
-  - /etc/nagios3/someotherdir
-nagios::monitor::cfg_extra:
-  log_file: /path/to/nagios.log
 nrpe_plugins:
   testnrpeplugin: {}
 nrpe_commands:

@@ -4,10 +4,6 @@ describe 'nagios::monitor' do
   let(:facts) {{
     :osfamily       => 'Debian',
     :kernel         => 'Linux',
-    :hostname       => 'foo',
-    :ipaddress      => '1.2.3.4',
-    :clientcert     => 'foo.example.com',
-    :concat_basedir => '/var/lib/puppet/concat'
   }}
 
   let(:hiera_config) { 'spec/fixtures/hiera/hiera.yaml' }
@@ -17,7 +13,7 @@ describe 'nagios::monitor' do
   end
 
   it do
-    should contain_class('rsync::server')
+    should contain_class('nagios::config')
   end
 
   it do
@@ -25,10 +21,34 @@ describe 'nagios::monitor' do
     should contain_package('nagios-plugins')
     should contain_package('inotify-tools')
     should contain_package('screen')
+    should contain_package('openssh-client')
+    should contain_package('openssh-server')
+    should contain_package('rsync')
   end
 
   it do
-    should contain_service('nagios3')
+    should contain_service('nagios3') \
+      .with_ensure('running')
+  end
+
+  it do
+    should contain_user('nagsync') \
+      .with_ensure('present') \
+      .with_managehome(true) \
+      .with_home('/home/nagsync') \
+      .with_purge_ssh_keys(true)
+  end
+
+  it do
+    should contain_user('nagios') \
+      .with_ensure('present')
+  end
+
+  it do
+    should contain_file('/home/nagsync/.ssh') \
+      .with_ensure('directory') \
+      .with_owner('nagsync') \
+      .with_require('User[nagsync]')
   end
 
   it do
@@ -102,12 +122,25 @@ describe 'nagios::monitor' do
       .with_content(/\/etc\/nagios3\/conf\.d\/hosts/)
   end
 
-  it do
-    should contain_file('/etc/default/inotify-nagios') \
-      .with_ensure('present') \
-      .with_mode('0644') \
-      .with_content('VERBOSE=yes') \
-      .with_before('Service[inotify-nagios]')
+  context "with osfamily == 'Debian'" do
+    it do
+      should contain_file('/etc/default/inotify-nagios') \
+        .with_ensure('present') \
+        .with_mode('0644') \
+        .with_content('VERBOSE=yes') \
+        .with_before('Service[inotify-nagios]')
+    end
+  end
+
+  context "with osfamily == 'RedHat'" do
+    let(:facts) {{
+      :osfamily       => 'RedHat',
+      :kernel         => 'Linux',
+    }}
+
+    it do
+      should_not contain_file('/etc/default/inotify-nagios')
+    end
   end
 
   it do
@@ -117,30 +150,39 @@ describe 'nagios::monitor' do
   end
 
   it do
-    should contain_user('nagios') \
-      .with_ensure('present') \
-      .with_managehome(true) \
-      .with_home('/home/nagios') \
-      .with_purge_ssh_keys(true)
-  end
-
-  it do
     should contain_file('/etc/nagios') \
       .with_ensure('directory') \
       .with_owner('nagios') \
-      .with_mode('0755')
+      .with_mode('0755') \
+      .with_require('User[nagios]')
+  end
+
+  it do
+    should contain_file('/etc/nagios3') \
+      .with_ensure('directory') \
+      .with_owner('nagios') \
+      .with_group('nagsync') \
+      .with_mode('0750') \
+      .with_require(/Package\[nagios3\]/) \
+      .with_before('File[/etc/nagios3/conf.d/hosts]')
   end
 
   it do
     should contain_file('/etc/nagios3/conf.d') \
       .with_ensure('directory') \
-      .with_owner('nagios')
+      .with_owner('nagios') \
+      .with_group('nagsync') \
+      .with_mode('0750') \
+      .with_require(/Package\[nagios3\]/) \
+      .with_before('File[/etc/nagios3/conf.d/hosts]')
   end
 
   it do
     should contain_file('/etc/nagios3/conf.d/hosts') \
       .with_ensure('directory') \
-      .with_owner('nagios')
+      .with_owner('nagsync') \
+      .with_group('nagios') \
+      .with_mode('2750')
   end
 
   it do
@@ -195,6 +237,70 @@ describe 'nagios::monitor' do
   end
 
   it do
+    should contain_file('/etc/nagios/nagios_command.cfg') \
+      .with_ensure('present') \
+      .with_owner('nagios') \
+      .with_group('nagios') \
+      .with_mode('0644') \
+      .with_notify('Service[nagios3]') \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/hosts\/foo_example_com.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/commands.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contacts.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/hostgroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/servicegroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contactgroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/timeperiods.cfg\]/)
+  end
+
+  it do
+    should contain_file('/etc/nagios/nagios_contact.cfg') \
+      .with_ensure('present') \
+      .with_owner('nagios') \
+      .with_group('nagios') \
+      .with_mode('0644') \
+      .with_notify('Service[nagios3]') \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/hosts\/foo_example_com.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/commands.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contacts.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/hostgroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/servicegroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contactgroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/timeperiods.cfg\]/)
+  end
+
+  it do
+    should contain_file('/etc/nagios/nagios_contactgroup.cfg') \
+      .with_ensure('present') \
+      .with_owner('nagios') \
+      .with_group('nagios') \
+      .with_mode('0644') \
+      .with_notify('Service[nagios3]') \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/hosts\/foo_example_com.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/commands.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contacts.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/hostgroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/servicegroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contactgroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/timeperiods.cfg\]/)
+  end
+
+  it do
+    should contain_file('/etc/nagios/nagios_hostgroup.cfg') \
+      .with_ensure('present') \
+      .with_owner('nagios') \
+      .with_group('nagios') \
+      .with_mode('0644') \
+      .with_notify('Service[nagios3]') \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/hosts\/foo_example_com.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/commands.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contacts.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/hostgroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/servicegroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contactgroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/timeperiods.cfg\]/)
+  end
+
+  it do
     should contain_file('/etc/nagios/nagios_host.cfg') \
       .with_ensure('present') \
       .with_owner('nagios') \
@@ -209,6 +315,54 @@ describe 'nagios::monitor' do
       .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contactgroups.cfg\]/) \
       .with_before(/Concat\[\/etc\/nagios3\/conf.d\/timeperiods.cfg\]/)
   end
+
+  it do
+    should contain_file('/etc/nagios/nagios_servicegroup.cfg') \
+      .with_ensure('present') \
+      .with_owner('nagios') \
+      .with_group('nagios') \
+      .with_mode('0644') \
+      .with_notify('Service[nagios3]') \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/hosts\/foo_example_com.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/commands.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contacts.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/hostgroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/servicegroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contactgroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/timeperiods.cfg\]/)
+  end
+
+  it do
+    should contain_file('/etc/nagios/nagios_service.cfg') \
+      .with_ensure('present') \
+      .with_owner('nagios') \
+      .with_group('nagios') \
+      .with_mode('0644') \
+      .with_notify('Service[nagios3]') \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/hosts\/foo_example_com.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/commands.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contacts.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/hostgroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/servicegroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contactgroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/timeperiods.cfg\]/)
+  end   
+
+  it do
+    should contain_file('/etc/nagios/nagios_timeperiod.cfg') \
+      .with_ensure('present') \
+      .with_owner('nagios') \
+      .with_group('nagios') \
+      .with_mode('0644') \
+      .with_notify('Service[nagios3]') \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/hosts\/foo_example_com.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/commands.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contacts.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/hostgroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/servicegroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/contactgroups.cfg\]/) \
+      .with_before(/Concat\[\/etc\/nagios3\/conf.d\/timeperiods.cfg\]/)
+  end   
 
   context "with hiera yaml containing default keys" do
     it do
@@ -418,26 +572,6 @@ describe 'nagios::monitor' do
       .with_target('/etc/nagios3/conf.d/timeperiods.cfg') \
       .with_source('/etc/nagios/nagios_timeperiod.cfg') \
       .with_order('01')
-  end
-
-  it do
-    should contain_rsync__server__module('nagios') \
-      .with_path('/etc/nagios3/conf.d/hosts') \
-      .with_require(/Package\[nagios3\]/)
-  end
-
-  context "with manage_firewall == true" do
-    let(:params) {{
-      :manage_firewall => true
-    }}
-
-    it do
-      should contain_firewall('200 Allow rsync access for Nagios') \
-        .with_chain('INPUT') \
-        .with_proto('tcp') \
-        .with_dport('873') \
-        .with_action('accept')
-    end
   end
 
   describe "nag_to_aug()" do

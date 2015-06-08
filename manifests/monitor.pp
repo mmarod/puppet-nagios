@@ -4,9 +4,8 @@
 #   include '::nagios::monitor'
 #
 # @example Include /etc/nagios3/commands.cfg
-#   class { '::nagios::monitor':
-#     cfg_files => [ '/etc/nagios3/commands.cfg' ]
-#   }
+#   nagios::config::cfg_files:
+#     - /etc/nagios3/commands.cfg
 #
 # @example Configuration for a Debian monitor.
 #   nagios::config::monitor_host: nagios.example.com
@@ -19,22 +18,20 @@
 # @param cfg_dirs [Array] A list of cfg_dirs to include in nagios.cfg.
 # @param cfg_extra [Hash] A hash of key/value pairs to set options with in nagios.cfg.
 #
-class nagios::monitor(
-  $cfg_files           = $nagios::params::cfg_files,
-  $cfg_dirs            = $nagios::params::cfg_dirs,
-  $cfg_extra           = {},
-) inherits nagios::params {
-  validate_array($cfg_files)
-  validate_array($cfg_dirs)
-  validate_hash($cfg_extra)
-
+class nagios::monitor inherits nagios::params {
   include nagios::config
 
+  # Grab variables from nagios::config class
   $monitor_host = $nagios::config::monitor_host
   $target_path  = $nagios::config::target_path
   $local_user   = $nagios::config::monitor_sync_user
   $nagios_user  = $nagios::config::nagios_user
   $nagios_group = $nagios::config::nagios_group
+  $cfg_files    = $nagios::config::cfg_files
+  $cfg_dirs     = $nagios::config::cfg_dirs
+  $cfg_extra    = $nagios::config::cfg_extra
+
+  # Escape the clientcert to create a unique filename
   $filebase     = regsubst($::clientcert, '\.', '_', 'G')
   $config_file  = "${target_path}/${filebase}.cfg"
 
@@ -114,8 +111,9 @@ class nagios::monitor(
     owner   => $nagios_user,
     group   => $local_user,
     mode    => '0750',
-    require => Package[$nagios::params::monitor_packages]
-  } ->
+    require => Package[$nagios::params::monitor_packages],
+    before  => File[$target_path]
+  }
 
   # Sets /etc/nagios3/conf.d/hosts to rwxr-s--- nagsync/nagios
   file { $target_path:
@@ -185,13 +183,13 @@ class nagios::monitor(
   }
 
   # Ensure that all of these files exist before using Concat on them.
-  file {[ "${nagios::params::naginator_confdir}/nagios_host.cfg",
-          "${nagios::params::naginator_confdir}/nagios_hostgroup.cfg",
-          "${nagios::params::naginator_confdir}/nagios_service.cfg",
-          "${nagios::params::naginator_confdir}/nagios_servicegroup.cfg",
-          "${nagios::params::naginator_confdir}/nagios_command.cfg",
+  file {[ "${nagios::params::naginator_confdir}/nagios_command.cfg",
           "${nagios::params::naginator_confdir}/nagios_contact.cfg",
           "${nagios::params::naginator_confdir}/nagios_contactgroup.cfg",
+          "${nagios::params::naginator_confdir}/nagios_hostgroup.cfg",
+          "${nagios::params::naginator_confdir}/nagios_host.cfg",
+          "${nagios::params::naginator_confdir}/nagios_servicegroup.cfg",
+          "${nagios::params::naginator_confdir}/nagios_service.cfg",
           "${nagios::params::naginator_confdir}/nagios_timeperiod.cfg"]:
     ensure => present,
     owner  => $nagios_user,
