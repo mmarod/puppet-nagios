@@ -22,16 +22,17 @@
 #
 class nagios::config (
   $monitor_host,
-  $target_path       = $nagios::params::target_path,
-  $nagios_user       = $nagios::params::nagios_user,
-  $nagios_group      = $nagios::params::nagios_group,
-  $target_sync_user  = $nagios::params::target_sync_user,
-  $monitor_sync_user = $nagios::params::monitor_sync_user,
-  $cfg_files         = $nagios::params::cfg_files,
-  $cfg_dirs          = $nagios::params::cfg_dirs,
-  $cfg_extra         = $nagios::params::cfg_extra,
-  $cwrsync_version   = $nagios::params::cwrsync_version,
-  $proxyAddress      = undef,
+  $target_path            = $nagios::params::target_path,
+  $nagios_user            = $nagios::params::nagios_user,
+  $nagios_group           = $nagios::params::nagios_group,
+  $target_sync_user       = $nagios::params::target_sync_user,
+  $monitor_sync_user      = $nagios::params::monitor_sync_user,
+  $cfg_files              = $nagios::params::cfg_files,
+  $cfg_dirs               = $nagios::params::cfg_dirs,
+  $cfg_extra              = $nagios::params::cfg_extra,
+  $cwrsync_version        = $nagios::params::cwrsync_version,
+  $proxyAddress           = undef,
+  $inotify_send_errors_to = undef,
 ) inherits nagios::params {
   validate_string($monitor_host)
   validate_absolute_path($target_path)
@@ -44,4 +45,5 @@ class nagios::config (
   validate_hash($cfg_extra)
   validate_string($cwrsync_version)
   validate_string($proxyAddress)
+  validate_string($inotify_send_errors_to)
 }

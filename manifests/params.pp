@@ -47,6 +47,7 @@ class nagios::params {
 
       case downcase($::osfamily) {
         'debian': {
+          $nagios_binary        = '/usr/sbin/nagios3'
           $plugin_path          = '/usr/lib/nagios/plugins'
           $eventhandler_path    = '/usr/share/nagios3/plugins/eventhandlers'
           $nagios_cfg_path      = '/etc/nagios3/nagios.cfg'
@@ -91,6 +92,7 @@ class nagios::params {
             /x86_64/ => '/usr/lib64/nagios/plugins/eventhandlers',
             default  => '/usr/lib/nagios/plugins/eventhandlers',
           }
+          $nagios_binary        = '/usr/sbin/nagios'
           $nagios_cfg_path      = '/etc/nagios/nagios.cfg'
           $nagios_targets       = '/etc/nagios/nagios-targets.txt'
           $conf_dir             = '/etc/nagios3'

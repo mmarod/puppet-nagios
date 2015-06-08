@@ -22,14 +22,15 @@ class nagios::monitor inherits nagios::params {
   include nagios::config
 
   # Grab variables from nagios::config class
-  $monitor_host = $nagios::config::monitor_host
-  $target_path  = $nagios::config::target_path
-  $local_user   = $nagios::config::monitor_sync_user
-  $nagios_user  = $nagios::config::nagios_user
-  $nagios_group = $nagios::config::nagios_group
-  $cfg_files    = $nagios::config::cfg_files
-  $cfg_dirs     = $nagios::config::cfg_dirs
-  $cfg_extra    = $nagios::config::cfg_extra
+  $monitor_host           = $nagios::config::monitor_host
+  $target_path            = $nagios::config::target_path
+  $local_user             = $nagios::config::monitor_sync_user
+  $nagios_user            = $nagios::config::nagios_user
+  $nagios_group           = $nagios::config::nagios_group
+  $cfg_files              = $nagios::config::cfg_files
+  $cfg_dirs               = $nagios::config::cfg_dirs
+  $cfg_extra              = $nagios::config::cfg_extra
+  $inotify_send_errors_to = $nagios::config::inotify_send_errors_to
 
   # Escape the clientcert to create a unique filename
   $filebase     = regsubst($::clientcert, '\.', '_', 'G')
