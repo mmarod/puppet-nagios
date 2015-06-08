@@ -207,162 +207,43 @@ class nagios::monitor(
                 Concat[$nagios::params::config_timeperiod] ]
   }
 
-  # Collect data from Hiera
-  $hosts          = hiera_hash('nagios_hosts', {})
-  $hostgroups     = hiera_hash('nagios_hostgroups', {})
-  $services       = hiera_hash('nagios_services', {})
-  $servicegroups  = hiera_hash('nagios_servicegroups', {})
-  $commands       = hiera_hash('nagios_commands', {})
-  $contacts       = hiera_hash('nagios_contacts', {})
-  $contactgroups  = hiera_hash('nagios_contactgroups', {})
-  $timeperiods    = hiera_hash('nagios_timeperiods', {})
-  $plugins        = hiera_hash('nagios_plugins', {})
-  $eventhandlers  = hiera_hash('nagios_eventhandlers', {})
-
   $create_defaults = { 'ensure' => 'present' }
 
-  # Create default contactgroup if there are none defined
-  if ! has_key($contactgroups, 'admins') {
-    nagios_contactgroup { 'admins':
-      ensure  => present,
-      alias   => 'Nagios Administrators',
-      members => 'root'
-    }
-  }
-  
-  # Create default timeperiods if there are none defined
-  if ! has_key($timeperiods, '24x7') {
-    nagios_timeperiod { '24x7':
-      ensure    => present,
-      alias     => '24 Hours A Day, 7 Days A Week',
-      sunday    => '00:00-24:00',
-      monday    => '00:00-24:00',
-      tuesday   => '00:00-24:00',
-      wednesday => '00:00-24:00',
-      thursday  => '00:00-24:00',
-      friday    => '00:00-24:00',
-      saturday  => '00:00-24:00',
-    }
-  }
+  # Collect data from Hiera
+  $nagios_commands       = hiera_hash('nagios_commands', {})
+  $nagios_contactgroups  = hiera_hash('nagios_contactgroups', {})
+  $nagios_contacts       = hiera_hash('nagios_contacts', {})
+  $nagios_eventhandlers  = hiera_hash('nagios_eventhandlers', {})
+  $nagios_hostgroups     = hiera_hash('nagios_hostgroups', {})
+  $nagios_hosts          = hiera_hash('nagios_hosts', {})
+  $nagios_plugins        = hiera_hash('nagios_plugins', {})
+  $nagios_servicegroups  = hiera_hash('nagios_servicegroups', {})
+  $nagios_services       = hiera_hash('nagios_services', {})
+  $nagios_timeperiods    = hiera_hash('nagios_timeperiods', {})
 
-  if ! has_key($timeperiods, 'workhours') {
-    nagios_timeperiod { 'workhours':
-      ensure    => present,
-      alias     => 'Standard Work Hours',
-      monday    => '09:00-17:00',
-      tuesday   => '09:00-17:00',
-      wednesday => '09:00-17:00',
-      thursday  => '09:00-17:00',
-      friday    => '09:00-17:00',
-    }
-  }
-
-  if ! has_key($timeperiods, 'nonworkhours') {
-    nagios_timeperiod { 'nonworkhours':
-      ensure    => present,
-      alias     => 'Non-Work Hours',
-      sunday    => '00:00-24:00',
-      monday    => '00:00-09:00,17:00-24:00',
-      tuesday   => '00:00-24:00,17:00-24:00',
-      wednesday => '00:00-24:00,17:00-24:00',
-      thursday  => '00:00-24:00,17:00-24:00',
-      friday    => '00:00-24:00,17:00-24:00',
-      saturday  => '00:00-24:00',
-    }
-  }
-
-  if ! has_key($timeperiods, 'never') {
-    nagios_timeperiod { 'never':
-      ensure => present,
-      alias  => 'never'
-    }
-  }
-
-  # Create generic-host
-  if ! has_key($hosts, 'generic-host') {
-    nagios_host { 'generic-host':
-      ensure                       => present,
-      notifications_enabled        => 1,
-      event_handler_enabled        => 1,
-      flap_detection_enabled       => 1,
-      failure_prediction_enabled   => 1,
-      process_perf_data            => 1,
-      retain_status_information    => 1,
-      retain_nonstatus_information => 1,
-      check_command                => 'check-host-alive',
-      max_check_attempts           => 10,
-      notification_interval        => 0,
-      notification_period          => '24x7',
-      notification_options         => 'd,u,r',
-      contact_groups               => 'admins',
-      register                     => 0
-    }
-  }
-
-  # Create generic-service
-  if ! has_key($services, 'generic-service') {
-    nagios_service { 'generic-service':
-      ensure                       => present,
-      active_checks_enabled        => 1,
-      passive_checks_enabled       => 1,
-      parallelize_check            => 1,
-      obsess_over_service          => 1,
-      check_freshness              => 0,
-      notifications_enabled        => 1,
-      event_handler_enabled        => 1,
-      flap_detection_enabled       => 1,
-      failure_prediction_enabled   => 1,
-      process_perf_data            => 1,
-      retain_status_information    => 1,
-      retain_nonstatus_information => 1,
-      notification_interval        => 0,
-      is_volatile                  => 0,
-      check_period                 => '24x7',
-      normal_check_interval        => 5,
-      retry_check_interval         => 1,
-      max_check_attempts           => 4,
-      notification_period          => '24x7',
-      notification_options         => 'w,u,c,r',
-      contact_groups               => 'admins',
-      register                     => 0
-    }
-  }
-
-  if ! has_key($commands, 'notify-host-by-email') {
-    nagios_command { 'notify-host-by-email':
-      command_line => '/usr/bin/printf "%b" "***** Nagios *****\n\nNotification Type: $NOTIFICATIONTYPE$\nHost: $HOSTNAME$\nState: $HOSTSTATE$\nAddress: $HOSTADDRESS$\nInfo: $HOSTOUTPUT$\n\nDate/Time: $LONGDATETIME$\n" | /usr/bin/mail -s "** $NOTIFICATIONTYPE$ Host Alert: $HOSTNAME$ is $HOSTSTATE$ **" $CONTACTEMAIL$'
-    }
-  }
-
-  if ! has_key($commands, 'notify-service-by-email') {
-    nagios_command { 'notify-service-by-email':
-      command_line => '/usr/bin/printf "%b" "***** Nagios *****\n\nNotification Type: $NOTIFICATIONTYPE$\n\nService: $SERVICEDESC$\nHost: $HOSTALIAS$\nAddress: $HOSTADDRESS$\nState: $SERVICESTATE$\n\nDate/Time: $LONGDATETIME$\n\nAdditional Info:\n\n$SERVICEOUTPUT$\n" | /usr/bin/mail -s "** $NOTIFICATIONTYPE$ Service Alert: $HOSTALIAS$/$SERVICEDESC$ is $SERVICESTATE$ **" $CONTACTEMAIL$'
-    }
-  }
-
-  if ! has_key($commands, 'process-host-perfdata') {
-    nagios_command { 'process-host-perfdata':
-      command_line => '/usr/bin/printf "%b" "$LASTHOSTCHECK$\t$HOSTNAME$\t$HOSTSTATE$\t$HOSTATTEMPT$\t$HOSTSTATETYPE$\t$HOSTEXECUTIONTIME$\t$HOSTOUTPUT$\t$HOSTPERFDATA$\n" >> /var/lib/nagios3/host-perfdata.out'
-    }
-  }
-
-  if ! has_key($commands, 'process-service-perfdata') {
-    nagios_command { 'process-service-perfdata':
-      command_line => '/usr/bin/printf "%b" "$LASTSERVICECHECK$\t$HOSTNAME$\t$SERVICEDESC$\t$SERVICESTATE$\t$SERVICEATTEMPT$\t$SERVICESTATETYPE$\t$SERVICEEXECUTIONTIME$\t$SERVICELATENCY$\t$SERVICEOUTPUT$\t$SERVICEPERFDATA$\n" >> /var/lib/nagios3/service-perfdata.out'
-    }
-  }
+  # Merge in the default parameters. The hash on the right of the merge command is higher precedence.
+  $commands       = merge($nagios::params::default_commands, $nagios_commands)
+  $contactgroups  = merge($nagios::params::default_contactgroups, $nagios_contactgroups)
+  $contacts       = merge($nagios::params::default_contacts, $nagios_contacts)
+  $eventhandlers  = merge($nagios::params::default_eventhandlers, $nagios_eventhandlers)
+  $hostgroups     = merge($nagios::params::default_hostgroups, $nagios_hostgroups)
+  $hosts          = merge($nagios::params::default_hosts, $nagios_hosts)
+  $plugins        = merge($nagios::params::default_plugins, $nagios_plugins)
+  $servicegroups  = merge($nagios::params::default_servicegroups, $nagios_servicegroups)
+  $services       = merge($nagios::params::default_services, $nagios_services)
+  $timeperiods    = merge($nagios::params::default_timeperiods, $nagios_timeperiods)
 
   # Create Nagios resources
-  create_resources('nagios_host',           $hosts,         $create_defaults)
-  create_resources('nagios_service',        $services,      $create_defaults)
-  create_resources('nagios_hostgroup',      $hostgroups,    $create_defaults)
-  create_resources('nagios_servicegroup',   $servicegroups, $create_defaults)
   create_resources('nagios_command',        $commands,      $create_defaults)
-  create_resources('nagios_contact',        $contacts,      $create_defaults)
   create_resources('nagios_contactgroup',   $contactgroups, $create_defaults)
-  create_resources('nagios_timeperiod',     $timeperiods,   $create_defaults)
-  create_resources('nagios::plugin',        $plugins)
+  create_resources('nagios_contact',        $contacts,      $create_defaults)
   create_resources('nagios::eventhandler',  $eventhandlers)
+  create_resources('nagios_hostgroup',      $hostgroups,    $create_defaults)
+  create_resources('nagios_host',           $hosts,         $create_defaults)
+  create_resources('nagios_servicegroup',   $servicegroups, $create_defaults)
+  create_resources('nagios_service',        $services,      $create_defaults)
+  create_resources('nagios::plugin',        $plugins)
+  create_resources('nagios_timeperiod',     $timeperiods,   $create_defaults)
 
   # Merge host and service into one file
   concat { $config_file:

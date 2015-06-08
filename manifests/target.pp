@@ -23,6 +23,7 @@ class nagios::target(
   $use_nrpe         = $nagios::params::use_nrpe,
   $xfer_method      = $nagios::params::xfer_method,
   $cwrsync_version  = $nagios::params::cwrsync_version,
+  $proxyAddress     = undef,$nagios::params::cwrsync_version,
 ) inherits nagios::params {
   validate_bool($use_nrpe)
   validate_string($xfer_method)
@@ -60,8 +61,7 @@ class nagios::target(
     }
     'windows': {
       $exec_path         = [ "${nagios::params::naginator_confdir}\\cwRsync_${cwrsync_version}_x86_Free", 'C:\windows', 'C:\windows\system32' ]
-      $rsync_environment = [ "CWRSYNCHOME=C:\\nagios\\cwRsync_${cwrsync_version}_x86_Free",
-                             'HOME=C:\nagios' ]
+      $rsync_environment = [ "CWRSYNCHOME=C:\\nagios\\cwRsync_${cwrsync_version}_x86_Free", 'HOME=C:\nagios' ]
 
       exec { 'delete-nagios-config':
         command  => "cmd.exe /c del /q ${nagios::params::naginator_confdir}\\nagios_*",
@@ -155,18 +155,14 @@ class nagios::target(
         windows::unzip { "${destination_directory}\\${destination_zipped}":
           destination => $destination_directory,
           creates     => "${destination_directory}\\${destination_unzipped}",
-          before      => [ Exec['ssh-keygen-nagios'],
-                           Exec['ssh-keygen-nagios-test'],
-                           Exec['transfer-config-to-nagios'] ]
+          before      => [ Exec['ssh-keygen-nagios'], Exec['ssh-keygen-nagios-test'], Exec['transfer-config-to-nagios'] ]
         }
       } elsif downcase($::kernel) == 'linux' {
         $rsync_onlyif          = "test `rsync --dry-run --itemize-changes ${rsync_onlyif_options} | wc -l` -gt 0"
         $rsync_command         = "rsync -q ${rsync_options}"
 
         ensure_packages( $nagios::params::target_packages,
-          { 'before' => [ Exec['ssh-keygen-nagios'],
-                          Exec['ssh-keygen-nagios-test'],
-                          Exec['transfer-config-to-nagios'] ] }
+          { 'before' => [ Exec['ssh-keygen-nagios'], Exec['ssh-keygen-nagios-test'], Exec['transfer-config-to-nagios'] ] }
         )
       }
 
