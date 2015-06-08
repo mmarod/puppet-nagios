@@ -12,15 +12,13 @@ logfile <%= @inotify_log %>
 logfile flush 1
 EOF
 
-notify_script=<%= @inotify_send_errors_to %>
-
 # Initialize the screen session
 /usr/bin/screen -d -m -S inotify_nagios -c /tmp/screenrc.$$ -L
 
 /bin/sleep 1
 
 # Use `stuff` to run the inotifywait loop in the screen
-/usr/bin/screen -x inotify_nagios -p 0 -X stuff "while inotifywait -q --timefmt '%m-%d-%y %H:%M:%S' --format '[%T] %:e %f' -e modify,create,delete <%= @target_path -%>; do ds=$(date +'%m-%d-%y %H:%M:%S'); tmpfile=`mktemp`; <%= @nagios_binary -%> -v <%= @nagios_cfg_path -%> > $tmpfile 2>&1; retval=$?; if [ $retval -ne 0 ]; then if [ ! -z "$notify_script" ]; then egrep '^Error' $tmpfile egrep '^Error' $tmpfile | $notify_script fi; egrep '^Error' $tmpfile egrep '^Error' $tmpfile | awk -v ds="$ds" '{print "["ds"]", $0}'; echo "[$ds] Nagios will not be reloaded."; else service <%= @nagios_service_name -%> reload 2>&1 | awk -v ds="$ds" '{print "["ds"]" $0}'; fi; rm $tmpfile; done;\r"
+/usr/bin/screen -x inotify_nagios -p 0 -X stuff "<%= @inotify_script_loop -%>\r"
 
 # Store the pid to /var/run/inotify-nagios.pid
 /usr/bin/basename /var/run/screen/S-root/*inotify_nagios .inotify_nagios | tail -n1 > /var/run/inotify-nagios.pid

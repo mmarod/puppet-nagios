@@ -78,6 +78,13 @@ class nagios::monitor inherits nagios::params {
     content => template('nagios/inotify-nagios.erb'),
   }
 
+  file { $nagios::params::inotify_script_loop:
+    ensure  => present,
+    mode    => '0755',
+    owner   => 'root',
+    content => template('nagios/inotify-nagios-loop.erb'),
+  }
+
   if $::osfamily == 'Debian' {
     file { $nagios::params::inotify_default:
       ensure  => present,
