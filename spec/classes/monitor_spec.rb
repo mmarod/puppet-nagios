@@ -118,8 +118,15 @@ describe 'nagios::monitor' do
       .with_ensure('present') \
       .with_mode('0755') \
       .with_owner('root') \
-      .with_content(/\/var\/log\/nagios3\/inotify.log/) \
-      .with_content(/\/etc\/nagios3\/conf\.d\/hosts/)
+      .with_content(/\/var\/log\/nagios3\/inotify.log/)
+  end
+
+  it do
+    should contain_file('/usr/sbin/inotify-nagios-loop') \
+      .with_ensure('present') \
+      .with_mode('0755') \
+      .with_owner('root') \
+      .with_content(/\/etc\/nagios3\/conf.d\/hosts/)
   end
 
   context "with osfamily == 'Debian'" do
@@ -145,8 +152,8 @@ describe 'nagios::monitor' do
 
   it do
     should contain_service('inotify-nagios') \
-      .with_require(/File\[\/etc\/init\.d\/inotify-nagios\]/) \
-      .with_require(/File\[\/usr\/sbin\/inotify-nagios\]/)
+      .with_ensure('running') \
+      .with_require(['File[/etc/init.d/inotify-nagios]', 'File[/usr/sbin/inotify-nagios]', 'File[/usr/sbin/inotify-nagios-loop]'])
   end
 
   it do

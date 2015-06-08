@@ -96,7 +96,7 @@ class nagios::monitor inherits nagios::params {
 
   service { $nagios::params::inotify_service_name:
     ensure  => running,
-    require => [ File[$nagios::params::inotify_init], File[$nagios::params::inotify_script] ]
+    require => [ File[$nagios::params::inotify_init], File[$nagios::params::inotify_script], File[$nagios::params::inotify_script_loop] ]
   }
 
   file { $nagios::params::naginator_confdir:
