@@ -2,106 +2,6 @@
 #
 # lint:ignore:2sp_soft_tabs
 class nagios::params {
-  $plugin_mode           = '0755'
-  $eventhandler_mode     = '0755'
-  $nagios_user           = 'nagios'
-  $nagios_group          = 'nagios'
-  $xfer_method           = 'rsync'
-  $cwrsync_version       = '5.4.1'
-  $ssh_key_type          = 'rsa'
-  $ssh_key_bits          = '2048'
-  $ssh_key_comment       = 'Nagios SSH key'
-  $test_ssh_key_comment  = 'Test Nagios SSH key'
-  $monitor_sync_user     = 'nagsync'
-
-  $default_commands      = { 'notify-host-by-email' => {
-                               'command_line' => '/usr/bin/printf "%b" "***** Nagios *****\n\nNotification Type: $NOTIFICATIONTYPE$\nHost: $HOSTNAME$\nState: $HOSTSTATE$\nAddress: $HOSTADDRESS$\nInfo: $HOSTOUTPUT$\n\nDate/Time: $LONGDATETIME$\n" | /usr/bin/mail -s "** $NOTIFICATIONTYPE$ Host Alert: $HOSTNAME$ is $HOSTSTATE$ **" $CONTACTEMAIL$' },
-                             'notify-service-by-email' => {
-                               'command_line' => '/usr/bin/printf "%b" "***** Nagios *****\n\nNotification Type: $NOTIFICATIONTYPE$\n\nService: $SERVICEDESC$\nHost: $HOSTALIAS$\nAddress: $HOSTADDRESS$\nState: $SERVICESTATE$\n\nDate/Time: $LONGDATETIME$\n\nAdditional Info:\n\n$SERVICEOUTPUT$\n" | /usr/bin/mail -s "** $NOTIFICATIONTYPE$ Service Alert: $HOSTALIAS$/$SERVICEDESC$ is $SERVICESTATE$ **" $CONTACTEMAIL$' },
-                             'notify-host-perfdata' => {
-                               'command_line' => '/usr/bin/printf "%b" "$LASTHOSTCHECK$\t$HOSTNAME$\t$HOSTSTATE$\t$HOSTATTEMPT$\t$HOSTSTATETYPE$\t$HOSTEXECUTIONTIME$\t$HOSTOUTPUT$\t$HOSTPERFDATA$\n" >> /var/lib/nagios3/host-perfdata.out' },
-                             'process-service-perfdata' => {
-                               'command_line' => '/usr/bin/printf "%b" "$LASTSERVICECHECK$\t$HOSTNAME$\t$SERVICEDESC$\t$SERVICESTATE$\t$SERVICEATTEMPT$\t$SERVICESTATETYPE$\t$SERVICEEXECUTIONTIME$\t$SERVICELATENCY$\t$SERVICEOUTPUT$\t$SERVICEPERFDATA$\n" >> /var/lib/nagios3/service-perfdata.out'
-                             }
-                           }
-  $default_contacts      = {}
-  $default_contactgroups = { 'admins' => {
-                               'alias'   => 'Nagios Administrators',
-                               'members' => 'root' }
-                           }
-  $default_eventhandlers = {}
-  $default_hostgroups    = {}
-  $default_hosts         = { 'generic-host' => {
-                               'notifications_enabled'        => 1,
-                               'event_handler_enabled'        => 1,
-                               'flap_detection_enabled'       => 1,
-                               'failure_prediction_enabled'   => 1,
-                               'process_perf_data'            => 1,
-                               'retain_status_information'    => 1,
-                               'retain_nonstatus_information' => 1,
-                               'check_command'                => 'check-host-alive',
-                               'max_check_attempts'           => 10,
-                               'notification_interval'        => 0,
-                               'notification_period'          => '24x7',
-                               'notification_options'         => 'd,u,r',
-                               'contact_groups'               => 'admins',
-                               'register'                     => 0 }
-                           }
-  $default_plugins       = {}
-  $default_servicegroups = {}
-  $default_services      = { 'generic-service' => {
-                               'active_checks_enabled'        => 1,
-                               'passive_checks_enabled'       => 1,
-                               'parallelize_check'            => 1,
-                               'obsess_over_service'          => 1,
-                               'check_freshness'              => 0,
-                               'notifications_enabled'        => 1,
-                               'event_handler_enabled'        => 1,
-                               'flap_detection_enabled'       => 1,
-                               'failure_prediction_enabled'   => 1,
-                               'process_perf_data'            => 1,
-                               'retain_status_information'    => 1,
-                               'retain_nonstatus_information' => 1,
-                               'notification_interval'        => 0,
-                               'is_volatile'                  => 0,
-                               'check_period'                 => '24x7',
-                               'normal_check_interval'        => 5,
-                               'retry_check_interval'         => 1,
-                               'max_check_attempts'           => 4,
-                               'notification_period'          => '24x7',
-                               'notification_options'         => 'w,u,c,r',
-                               'contact_groups'               => 'admins',
-                               'register'                     => 0 }
-                             }
-  $default_timeperiods   = { '24x7' => {
-                               'alias'     => '24 Hours A Day, 7 Days A Week',
-                               'sunday'    => '00:00-24:00',
-                               'monday'    => '00:00-24:00',
-                               'tuesday'   => '00:00-24:00',
-                               'wednesday' => '00:00-24:00',
-                               'thursday'  => '00:00-24:00',
-                               'friday'    => '00:00-24:00',
-                               'saturday'  => '00:00-24:00' },
-                             'workhours' => {
-                               'alias'     => 'Standard Work Hours',
-                               'monday'    => '09:00-17:00',
-                               'tuesday'   => '09:00-17:00',
-                               'wednesday' => '09:00-17:00',
-                               'thursday'  => '09:00-17:00',
-                               'friday'    => '09:00-17:00' },
-                             'nonworkhours' => {
-                               'alias'     => 'Non-Work Hours',
-                               'sunday'    => '00:00-24:00',
-                               'monday'    => '00:00-09:00,17:00-24:00',
-                               'tuesday'   => '00:00-09:00,17:00-24:00',
-                               'wednesday' => '00:00-09:00,17:00-24:00',
-                               'thursday'  => '00:00-09:00,17:00-24:00',
-                               'friday'    => '00:00-09:00,17:00-24:00',
-                               'saturday'  => '00:00-24:00' },
-                             'never' => {
-                               'alias'  => 'never' }
-                           }
-
   case downcase($::kernel) {
     'windows': {
       $remove_comments_command = 'C:\windows\system32\cmd.exe /c findstr /v /b /c:"#" C:\nagios\nagios_config_commented.cfg > C:\nagios\nagios_config.cfg'
@@ -120,8 +20,8 @@ class nagios::params {
       $naginator_confdir_mode  = undef
       $config_file_mode        = undef
       $config_file_loglevel    = 'debug'
-      $host_defaults           = { 'ensure' => 'present', 'target' => 'C:/nagios/nagios_host.cfg', 'loglevel' => 'debug' }
-      $service_defaults        = { 'ensure' => 'present', 'target' => 'C:/nagios/nagios_service.cfg', 'loglevel' => 'debug' }
+      $host_defaults           = { 'ensure' => 'present', 'target' => 'C:\nagios\nagios_host.cfg', 'loglevel' => 'debug' }
+      $service_defaults        = { 'ensure' => 'present', 'target' => 'C:\nagios\nagios_service.cfg', 'loglevel' => 'debug' }
       $use_nrpe                = false
     }
     'linux': {
@@ -230,5 +130,104 @@ class nagios::params {
       fail("Unsupported kernel '${::kernel}'.")
     }
   }
+  $plugin_mode           = '0755'
+  $eventhandler_mode     = '0755'
+  $nagios_user           = 'nagios'
+  $nagios_group          = 'nagios'
+  $xfer_method           = 'rsync'
+  $cwrsync_version       = '5.4.1'
+  $ssh_key_type          = 'rsa'
+  $ssh_key_bits          = '2048'
+  $ssh_key_comment       = 'Nagios SSH key'
+  $test_ssh_key_comment  = 'Test Nagios SSH key'
+  $monitor_sync_user     = 'nagsync'
+
+  $default_commands      = { 'notify-host-by-email' => {
+                               'command_line' => '/usr/bin/printf "%b" "***** Nagios *****\n\nNotification Type: $NOTIFICATIONTYPE$\nHost: $HOSTNAME$\nState: $HOSTSTATE$\nAddress: $HOSTADDRESS$\nInfo: $HOSTOUTPUT$\n\nDate/Time: $LONGDATETIME$\n" | /usr/bin/mail -s "** $NOTIFICATIONTYPE$ Host Alert: $HOSTNAME$ is $HOSTSTATE$ **" $CONTACTEMAIL$' },
+                             'notify-service-by-email' => {
+                               'command_line' => '/usr/bin/printf "%b" "***** Nagios *****\n\nNotification Type: $NOTIFICATIONTYPE$\n\nService: $SERVICEDESC$\nHost: $HOSTALIAS$\nAddress: $HOSTADDRESS$\nState: $SERVICESTATE$\n\nDate/Time: $LONGDATETIME$\n\nAdditional Info:\n\n$SERVICEOUTPUT$\n" | /usr/bin/mail -s "** $NOTIFICATIONTYPE$ Service Alert: $HOSTALIAS$/$SERVICEDESC$ is $SERVICESTATE$ **" $CONTACTEMAIL$' },
+                             'notify-host-perfdata' => {
+                               'command_line' => '/usr/bin/printf "%b" "$LASTHOSTCHECK$\t$HOSTNAME$\t$HOSTSTATE$\t$HOSTATTEMPT$\t$HOSTSTATETYPE$\t$HOSTEXECUTIONTIME$\t$HOSTOUTPUT$\t$HOSTPERFDATA$\n" >> /var/lib/nagios3/host-perfdata.out' },
+                             'process-service-perfdata' => {
+                               'command_line' => '/usr/bin/printf "%b" "$LASTSERVICECHECK$\t$HOSTNAME$\t$SERVICEDESC$\t$SERVICESTATE$\t$SERVICEATTEMPT$\t$SERVICESTATETYPE$\t$SERVICEEXECUTIONTIME$\t$SERVICELATENCY$\t$SERVICEOUTPUT$\t$SERVICEPERFDATA$\n" >> /var/lib/nagios3/service-perfdata.out'
+                             }
+                           }
+  $default_contacts      = {}
+  $default_contactgroups = { 'admins' => {
+                               'alias'   => 'Nagios Administrators',
+                               'members' => 'root' }
+                           }
+  $default_eventhandlers = {}
+  $default_hostgroups    = {}
+  $default_hosts         = { 'generic-host' => {
+                               'notifications_enabled'        => 1,
+                               'event_handler_enabled'        => 1,
+                               'flap_detection_enabled'       => 1,
+                               'failure_prediction_enabled'   => 1,
+                               'process_perf_data'            => 1,
+                               'retain_status_information'    => 1,
+                               'retain_nonstatus_information' => 1,
+                               'check_command'                => 'check-host-alive',
+                               'max_check_attempts'           => 10,
+                               'notification_interval'        => 0,
+                               'notification_period'          => '24x7',
+                               'notification_options'         => 'd,u,r',
+                               'contact_groups'               => 'admins',
+                               'register'                     => 0 }
+                           }
+  $default_plugins       = {}
+  $default_servicegroups = {}
+  $default_services      = { 'generic-service' => {
+                               'active_checks_enabled'        => 1,
+                               'passive_checks_enabled'       => 1,
+                               'parallelize_check'            => 1,
+                               'obsess_over_service'          => 1,
+                               'check_freshness'              => 0,
+                               'notifications_enabled'        => 1,
+                               'event_handler_enabled'        => 1,
+                               'flap_detection_enabled'       => 1,
+                               'failure_prediction_enabled'   => 1,
+                               'process_perf_data'            => 1,
+                               'retain_status_information'    => 1,
+                               'retain_nonstatus_information' => 1,
+                               'notification_interval'        => 0,
+                               'is_volatile'                  => 0,
+                               'check_period'                 => '24x7',
+                               'normal_check_interval'        => 5,
+                               'retry_check_interval'         => 1,
+                               'max_check_attempts'           => 4,
+                               'notification_period'          => '24x7',
+                               'notification_options'         => 'w,u,c,r',
+                               'contact_groups'               => 'admins',
+                               'register'                     => 0 }
+                             }
+  $default_timeperiods   = { '24x7' => {
+                               'alias'     => '24 Hours A Day, 7 Days A Week',
+                               'sunday'    => '00:00-24:00',
+                               'monday'    => '00:00-24:00',
+                               'tuesday'   => '00:00-24:00',
+                               'wednesday' => '00:00-24:00',
+                               'thursday'  => '00:00-24:00',
+                               'friday'    => '00:00-24:00',
+                               'saturday'  => '00:00-24:00' },
+                             'workhours' => {
+                               'alias'     => 'Standard Work Hours',
+                               'monday'    => '09:00-17:00',
+                               'tuesday'   => '09:00-17:00',
+                               'wednesday' => '09:00-17:00',
+                               'thursday'  => '09:00-17:00',
+                               'friday'    => '09:00-17:00' },
+                             'nonworkhours' => {
+                               'alias'     => 'Non-Work Hours',
+                               'sunday'    => '00:00-24:00',
+                               'monday'    => '00:00-09:00,17:00-24:00',
+                               'tuesday'   => '00:00-09:00,17:00-24:00',
+                               'wednesday' => '00:00-09:00,17:00-24:00',
+                               'thursday'  => '00:00-09:00,17:00-24:00',
+                               'friday'    => '00:00-09:00,17:00-24:00',
+                               'saturday'  => '00:00-24:00' },
+                             'never' => {
+                               'alias'  => 'never' }
+                           }
 }
 # lint:endignore
