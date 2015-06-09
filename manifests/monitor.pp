@@ -261,13 +261,13 @@ class nagios::monitor inherits nagios::params {
     target => $config_file,
     source => "${nagios::params::naginator_confdir}/nagios_host.cfg",
     order  => '01',
-  }
+  } <- Nagios_host<||>
 
   concat::fragment { 'nagios-service-config':
     target => $config_file,
     source => "${nagios::params::naginator_confdir}/nagios_service.cfg",
     order  => '02',
-  }
+  } <- Nagios_service<||>
 
   # This essentially copies /etc/nagios/nagios_hostgroup.cfg to /etc/nagios3/conf.d/hostgroups.cfg
   concat { $nagios::params::config_hostgroup:
@@ -279,7 +279,7 @@ class nagios::monitor inherits nagios::params {
     target => $nagios::params::config_hostgroup,
     source => "${nagios::params::naginator_confdir}/nagios_hostgroup.cfg",
     order  => '01',
-  }
+  } <- Nagios_hostgroup<||>
 
   # This essentially copies /etc/nagios/nagios_servicegroup.cfg to /etc/nagios3/conf.d/servicegroups.cfg
   concat { $nagios::params::config_servicegroup:
@@ -291,7 +291,7 @@ class nagios::monitor inherits nagios::params {
     target => $nagios::params::config_servicegroup,
     source => "${nagios::params::naginator_confdir}/nagios_servicegroup.cfg",
     order  => '01',
-  }
+  } <- Nagios_servicegroup<||>
 
   # This essentially copies /etc/nagios/nagios_command.cfg to /etc/nagios3/conf.d/commands.cfg
   concat { $nagios::params::config_command:
@@ -303,7 +303,7 @@ class nagios::monitor inherits nagios::params {
     target => $nagios::params::config_command,
     source => "${nagios::params::naginator_confdir}/nagios_command.cfg",
     order  => '01',
-  }
+  } <- Nagios_command<||>
 
   # This essentially copies /etc/nagios/nagios_contact.cfg to /etc/nagios3/conf.d/contacts.cfg
   concat { $nagios::params::config_contact:
@@ -315,7 +315,7 @@ class nagios::monitor inherits nagios::params {
     target => $nagios::params::config_contact,
     source => "${nagios::params::naginator_confdir}/nagios_contact.cfg",
     order  => '01',
-  }
+  } <- Nagios_contact<||>
 
   # This essentially copies /etc/nagios/nagios_contactgroup.cfg to /etc/nagios3/conf.d/contactgroups.cfg
   concat { $nagios::params::config_contactgroup:
@@ -327,7 +327,7 @@ class nagios::monitor inherits nagios::params {
     target => $nagios::params::config_contactgroup,
     source => "${nagios::params::naginator_confdir}/nagios_contactgroup.cfg",
     order  => '01',
-  }
+  } <- Nagios_contactgroup<||>
 
   # This essentially copies /etc/nagios/nagios_timeperiod.cfg to /etc/nagios3/conf.d/timeperiods.cfg
   concat { $nagios::params::config_timeperiod:
@@ -339,7 +339,7 @@ class nagios::monitor inherits nagios::params {
     target => $nagios::params::config_timeperiod,
     source => "${nagios::params::naginator_confdir}/nagios_timeperiod.cfg",
     order  => '01',
-  }
+  } <- Nagios_timeperiod<||>
 
   # Purge unmanaged resources
   resources { [ 'nagios_host',
