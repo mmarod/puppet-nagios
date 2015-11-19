@@ -115,7 +115,7 @@ class nagios::target (
   # Remove headers from the final config
   exec { 'remove-headers-from-config':
     command  => $nagios::params::remove_comments_command,
-    require  => Concat['nagios-config'],
+    require  => Concat[$nagios::params::config_file_commented],
     loglevel => 'debug',
   }
 
