@@ -91,14 +91,14 @@ class nagios::target (
 
   # Merge host and service configuration into a single file.
   concat::fragment { 'nagios-host-config':
-    target => Concat['nagios-config'],
+    target => $nagios::params::config_file_commented,
     tag    => 'nagios-config',
     source => "${nagios::params::naginator_confdir}/nagios_host.cfg",
     order  => '01',
   }
 
   concat::fragment { 'nagios-service-config':
-    target => Concat['nagios-config'],
+    target => $nagios::params::config_file_commented,
     tag    => 'nagios-config',
     source => "${nagios::params::naginator_confdir}/nagios_service.cfg",
     order  => '02',
