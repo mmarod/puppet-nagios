@@ -84,18 +84,21 @@ class nagios::target (
 
   # Send our config filename to the monitor so our configuration is not purged.
   @@concat::fragment { "nagios_target_${filebase}":
+    target  => $nagios::params::nagios_targets,
     tag     => 'nagios-targets',
     content => "${filebase}.cfg",
   }
 
   # Merge host and service configuration into a single file.
   concat::fragment { 'nagios-host-config':
+    target => Concat['nagios-config'],
     tag    => 'nagios-config',
     source => "${nagios::params::naginator_confdir}/nagios_host.cfg",
     order  => '01',
   }
 
   concat::fragment { 'nagios-service-config':
+    target => Concat['nagios-config'],
     tag    => 'nagios-config',
     source => "${nagios::params::naginator_confdir}/nagios_service.cfg",
     order  => '02',

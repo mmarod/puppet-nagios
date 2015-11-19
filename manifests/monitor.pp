@@ -133,6 +133,7 @@ class nagios::monitor inherits nagios::params {
 
   # Make sure that we are in the nagios-targets.txt file
   @@concat::fragment { "nagios_target_${filebase}":
+    target  => $nagios::params::nagios_targets,
     tag     => 'nagios-targets',
     content => "${filebase}.cfg",
   }
