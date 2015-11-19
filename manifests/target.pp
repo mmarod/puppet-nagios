@@ -54,8 +54,9 @@ class nagios::target (
       $rsync_environment = undef
 
       user { $local_user:
-        ensure => present,
-        before => File[$nagios::params::naginator_confdir]
+        ensure     => present,
+        managehome => true,
+        before     => File[$nagios::params::naginator_confdir]
       }
     }
     'windows': {
