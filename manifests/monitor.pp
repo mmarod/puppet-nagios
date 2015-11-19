@@ -111,7 +111,8 @@ class nagios::monitor inherits nagios::params {
         Nagios_command<||> ->
         Nagios_contact<||> ->
         Nagios_contactgroup<||> ->
-        Nagios_timeperiod<||>
+        Nagios_timeperiod<||> ->
+        Service[$nagios::params::nagios_service_name]
 
   # Sets /etc/nagios3/conf.d to rwxr-x--- nagios/nagsync
   file { [ $nagios::params::conf_dir, $nagios::params::conf_d_dir ]:
