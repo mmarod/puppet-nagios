@@ -38,8 +38,8 @@ class nagios::target (
 
   # Make sure that the nagios configurations are generated before concat
   # and rsync are used.
-  Nagios_host<||>    -> Concat_file<||>
-  Nagios_service<||> -> Concat_file<||>
+  Nagios_host<||>    -> Concat<||>
+  Nagios_service<||> -> Concat<||>
 
   # Ensure that /etc/nagios or C:\nagios exist
   file { $nagios::params::naginator_confdir:
@@ -83,25 +83,25 @@ class nagios::target (
   create_resources('nagios_service',  $services, $nagios::params::service_defaults)
 
   # Send our config filename to the monitor so our configuration is not purged.
-  @@concat_fragment { "nagios_target_${filebase}":
+  @@concat::fragment { "nagios_target_${filebase}":
     tag     => 'nagios-targets',
     content => "${filebase}.cfg",
   }
 
   # Merge host and service configuration into a single file.
-  concat_fragment { 'nagios-host-config':
+  concat::fragment { 'nagios-host-config':
     tag    => 'nagios-config',
     source => "${nagios::params::naginator_confdir}/nagios_host.cfg",
     order  => '01',
   }
 
-  concat_fragment { 'nagios-service-config':
+  concat::fragment { 'nagios-service-config':
     tag    => 'nagios-config',
     source => "${nagios::params::naginator_confdir}/nagios_service.cfg",
     order  => '02',
   }
 
-  concat_file { 'nagios-config':
+  concat { 'nagios-config':
     tag            => 'nagios-config',
     path           => $nagios::params::config_file_commented,
     owner          => $local_user,
@@ -113,7 +113,7 @@ class nagios::target (
   # Remove headers from the final config
   exec { 'remove-headers-from-config':
     command  => $nagios::params::remove_comments_command,
-    require  => Concat_file['nagios-config'],
+    require  => Concat['nagios-config'],
     loglevel => 'debug',
   }
 

@@ -9,7 +9,7 @@
   "issues_url": "https://github.com/mmarod/puppet-nagios/issues",
   "dependencies": [
     {"name":"puppetlabs/stdlib","version_requirement":"4.x"},
-    {"name":"puppetlabs/concat","version_requirement":"2.x"}
+    {"name":"puppetlabs/concat","version_requirement":"1.x"}
   ],
   "requirements": [
     {

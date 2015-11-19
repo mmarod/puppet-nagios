@@ -132,7 +132,7 @@ class nagios::monitor inherits nagios::params {
   }
 
   # Make sure that we are in the nagios-targets.txt file
-  @@concat_fragment { "nagios_target_${filebase}":
+  @@concat::fragment { "nagios_target_${filebase}":
     tag     => 'nagios-targets',
     content => "${filebase}.cfg",
   }
@@ -141,9 +141,9 @@ class nagios::monitor inherits nagios::params {
   File <<| tag == 'nagios-config' |>>
 
   # Collect all of the nagios::target names and store them in a file
-  Concat_fragment <<| tag == 'nagios-targets' |>>
+  Concat::Fragment <<| tag == 'nagios-targets' |>>
 
-  concat_file { $nagios::params::nagios_targets:
+  concat::file { $nagios::params::nagios_targets:
     tag            => 'nagios-targets',
     ensure_newline => true,
   }
