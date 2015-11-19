@@ -40,8 +40,7 @@ class nagios::monitor inherits nagios::params {
 
   service { $nagios::params::nagios_service_name:
     ensure  => running,
-    require => Concat<||>
-  }
+  } <- Concat<||>
 
   user { $local_user:
     ensure         => present,
