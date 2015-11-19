@@ -104,9 +104,8 @@ class nagios::target (
     order  => '02',
   }
 
-  concat { 'nagios-config':
+  concat { $nagios::params::config_file_commented:
     tag            => 'nagios-config',
-    path           => $nagios::params::config_file_commented,
     owner          => $local_user,
     mode           => $nagios::params::config_file_mode,
     ensure_newline => true,
