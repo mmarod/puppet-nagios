@@ -143,7 +143,7 @@ class nagios::monitor inherits nagios::params {
   # Collect all of the nagios::target names and store them in a file
   Concat::Fragment <<| tag == 'nagios-targets' |>>
 
-  concat::file { $nagios::params::nagios_targets:
+  concat { $nagios::params::nagios_targets:
     tag            => 'nagios-targets',
     ensure_newline => true,
   }
