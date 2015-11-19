@@ -154,7 +154,7 @@ class nagios::monitor inherits nagios::params {
   exec { 'remove-unmanaged-hosts':
     command => "/usr/bin/find ${target_path} ! -path ${target_path} -exec basename {} \\; | /bin/grep -Fxvf ${nagios::params::nagios_targets} | awk '{print \"${target_path}/\" \$1}' | /usr/bin/xargs rm",
     onlyif  => "/usr/bin/find ${target_path} ! -path ${target_path} -exec basename {} \\; | /bin/grep -Fxvf ${nagios::params::nagios_targets}",
-    require => Concat_file[$nagios::params::nagios_targets]
+    require => Concat[$nagios::params::nagios_targets]
   }
 
   # Take an array of cfg_file names and turn them into something Augeas can understand.
