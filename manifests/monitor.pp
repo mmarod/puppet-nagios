@@ -118,7 +118,7 @@ class nagios::monitor inherits nagios::params {
     ensure  => directory,
     owner   => $nagios_user,
     group   => $local_user,
-    mode    => '0750',
+    mode    => '0755',
     require => Package[$nagios::params::monitor_packages],
     before  => File[$target_path]
   }
