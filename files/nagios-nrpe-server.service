@@ -4,6 +4,7 @@ DefaultDependencies=no
 After=network.target syslog.target
 
 [Service]
+Type=forking
 EnvironmentFile=-/etc/default/nagios-nrpe-server
 ExecStart=/usr/sbin/nrpe -c /etc/nagios/nrpe.cfg -d
 
