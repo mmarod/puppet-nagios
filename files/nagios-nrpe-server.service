@@ -1,0 +1,11 @@
+[Unit]
+Description=Nagios NRPE Server
+DefaultDependencies=no
+After=network.target syslog.target
+
+[Service]
+EnvironmentFile=-/etc/default/nagios-nrpe-server
+ExecStart=/usr/sbin/nrpe -c /etc/nagios/nrpe.cfg -d
+
+[Install]
+WantedBy=multi-user.target

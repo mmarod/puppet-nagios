@@ -237,6 +237,17 @@ class nagios::target (
   }
 
   if $use_nrpe {
+    if $::lsbdistcodename == 'jessie' {
+      file { "/etc/systemd/system/nagios-nrpe-server.service":
+        ensure    => present,
+        owner     => 'root',
+        group     => 'root',
+        mode      => '0644',
+        source    => 'puppet:///modules/nagios/nagios-nrpe-server.service',
+        before    => Class['nrpe']
+      }
+    }
+
     include '::nrpe'
 
     $nrpe_commands = hiera_hash('nrpe_commands', {})
