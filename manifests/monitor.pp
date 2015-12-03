@@ -198,7 +198,7 @@ class nagios::monitor inherits nagios::params {
     owner   => $nagios_user,
     group   => $nagios_user,
     mode    => '0644',
-    content => inline_epp('<% $nagios_htpasswd_users.each |$user, $pass| -%><%= $user %>:<%= $pass %>', { 'nagios_htpasswd_users' => $nagios_htpasswd_users }),
+    content => inline_epp('<% $nagios_htpasswd_users.each |$user, $pass| { -%><%= $user %>:<%= $pass %><% } -%>', { 'nagios_htpasswd_users' => $nagios_htpasswd_users }),
     require => File[$nagios::params::conf_dir]
   }
 
