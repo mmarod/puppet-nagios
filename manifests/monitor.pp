@@ -180,8 +180,8 @@ class nagios::monitor inherits nagios::params {
   }
 
   # Takes a hash of changes to make and applies them with Augeas.
-  $changes_array = join_keys_to_values($cfg_extra, ' \'"')
-  $changes_quoted = suffix($changes_array, '"\'')
+  $changes_array = join_keys_to_values($cfg_extra, ' \'')
+  $changes_quoted = suffix($changes_array, '\'')
   $changes = prefix($changes_quoted, 'set ')
 
   augeas { 'configure-nagios_cfg-custom-settings':
