@@ -195,11 +195,12 @@ class nagios::monitor inherits nagios::params {
   $nagios_htpasswd_users = hiera_hash('nagios_htpasswd_users', {})
 
   file { "${nagios::params::conf_dir}/htpasswd.users":
-    owner   => $nagios_user,
-    group   => $nagios_user,
-    mode    => '0644',
-    content => inline_epp('<% $nagios_htpasswd_users.each |$user, $pass| { -%><%= $user %>:<%= "$pass\n" %><% } %>', { 'nagios_htpasswd_users' => $nagios_htpasswd_users }),
-    require => File[$nagios::params::conf_dir]
+    owner    => $nagios_user,
+    group    => $nagios_user,
+    mode     => '0644',
+    loglevel => 'debug',
+    content  => inline_epp('<% $nagios_htpasswd_users.each |$user, $pass| { -%><%= $user %>:<%= "$pass\n" %><% } %>', { 'nagios_htpasswd_users' => $nagios_htpasswd_users }),
+    require  => File[$nagios::params::conf_dir]
   }
 
   # Ensure that all of these files exist before using Concat on them.
