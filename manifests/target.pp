@@ -17,8 +17,9 @@
 # @param xfer_method [String] (rsync/storeconfig) How to transfer the Nagios config to the monitor.
 #
 class nagios::target (
-  $use_nrpe        = $nagios::params::use_nrpe,
-  $xfer_method     = $nagios::params::xfer_method
+  $use_nrpe            = $nagios::params::use_nrpe,
+  $xfer_method         = $nagios::params::xfer_method,
+  $notification_period = '24x7'
 ) inherits nagios::params {
   validate_bool($use_nrpe)
   validate_string($xfer_method)
@@ -79,9 +80,12 @@ class nagios::target (
   $hosts              = hiera_hash('nagios_hosts', {})
   $services           = hiera_hash('nagios_services', {})
 
+  $_host_defaults = merge($nagios::params::host_defaults, $notification_period)
+  $_service_defaults = merge($nagios::params::service_defaults, { 'notification_period' => $notification_period })
+
   # Create resources from Hiera data
-  create_resources('nagios_host',     $hosts,    $nagios::params::host_defaults)
-  create_resources('nagios_service',  $services, $nagios::params::service_defaults)
+  create_resources('nagios_host',     $hosts,    $_host_defaults)
+  create_resources('nagios_service',  $services, $_service_defaults)
 
   # Send our config filename to the monitor so our configuration is not purged.
   @@concat::fragment { "nagios_target_${filebase}":
