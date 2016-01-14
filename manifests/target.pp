@@ -80,7 +80,7 @@ class nagios::target (
   $hosts              = hiera_hash('nagios_hosts', {})
   $services           = hiera_hash('nagios_services', {})
 
-  $_host_defaults = merge($nagios::params::host_defaults, $notification_period)
+  $_host_defaults = merge($nagios::params::host_defaults, { 'notification_period' => $$notification_period })
   $_service_defaults = merge($nagios::params::service_defaults, { 'notification_period' => $notification_period })
 
   # Create resources from Hiera data
